@@ -36,6 +36,13 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Seed database (only if empty)
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await DataSeeder.SeedAsync(dbContext);
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
