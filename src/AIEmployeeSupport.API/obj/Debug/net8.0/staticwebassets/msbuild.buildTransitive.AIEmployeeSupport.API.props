@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\AIEmployeeSupport.API.props" />
+</Project>
