@@ -1,24 +1,72 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthLayout } from './layouts/AuthLayout';
+import { EmployeeLayout } from './layouts/EmployeeLayout';
+import { AdminLayout } from './layouts/AdminLayout';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminRoute } from './components/AdminRoute';
+
+import { 
+  LoginPage,
+  EmployeeSupportPage,
+  AdminDashboard,
+  ScenarioListPage,
+  CreateScenarioPage,
+  EditScenarioPage,
+  CategoriesPage,
+  KeywordsPage,
+  AIProvidersPage,
+  AIModelsPage,
+  AIConfigurationPage,
+  EmployeesPage,
+  QuestionsPage,
+  AnalyticsPage,
+  AuditLogPage
+} from './pages';
+
 function App() {
   return (
-    <div className="min-h-screen bg-[var(--color-background)] p-8">
-      <div className="max-w-2xl mx-auto bg-[var(--color-surface)] rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-[var(--color-primary)] mb-4">
-          مساعد دعم الموظفين الذكي
-        </h1>
-        <p className="text-lg text-[var(--color-text-secondary)] mb-6">
-          مرحباً بكم في نظام دعم الموظفين المدعوم بالذكاء الاصطناعي
-        </p>
-        <div className="flex gap-4">
-          <button className="px-6 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors">
-            تسجيل الدخول
-          </button>
-          <button className="px-6 py-2 border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-lg hover:bg-[var(--color-background)] transition-colors">
-            إنشاء حساب
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+    <BrowserRouter>
+      <Routes>
+        {/* Public Routes */}
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+        </Route>
+
+        {/* Protected Routes (Any Authenticated User) */}
+        <Route element={<ProtectedRoute />}>
+          {/* Employee Routes */}
+          <Route element={<EmployeeLayout />}>
+            <Route path="/support" element={<EmployeeSupportPage />} />
+          </Route>
+
+          {/* Admin Routes */}
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="knowledge" element={<ScenarioListPage />} />
+              <Route path="knowledge/create" element={<CreateScenarioPage />} />
+              <Route path="knowledge/edit/:id" element={<EditScenarioPage />} />
+              <Route path="knowledge/categories" element={<CategoriesPage />} />
+              <Route path="knowledge/keywords" element={<KeywordsPage />} />
+              
+              <Route path="ai" element={<AIConfigurationPage />} />
+              <Route path="ai/providers" element={<AIProvidersPage />} />
+              <Route path="ai/models" element={<AIModelsPage />} />
+              
+              <Route path="employees" element={<EmployeesPage />} />
+              <Route path="questions" element={<QuestionsPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="audit" element={<AuditLogPage />} />
+            </Route>
+          </Route>
+        </Route>
+
+        {/* Fallback routes */}
+        <Route path="/" element={<Navigate to="/support" replace />} />
+        <Route path="*" element={<Navigate to="/support" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
