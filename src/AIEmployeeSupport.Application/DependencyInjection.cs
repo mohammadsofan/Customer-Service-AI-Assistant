@@ -22,8 +22,10 @@ public static class DependencyInjection
         services.AddScoped<IRAGService, RAGService>();
         services.AddScoped<IAIFailoverService, AIFailoverService>();
         services.AddScoped<IAIProviderService, AIProviderService>();
+        services.AddScoped<IAIModelService, AIModelService>();
         services.AddScoped<IAIConfigurationService, AIConfigurationService>();
         services.AddScoped<IAnalyticsService, AnalyticsService>();
+        services.AddScoped<ISupportService, SupportService>();
 
         return services;
     }

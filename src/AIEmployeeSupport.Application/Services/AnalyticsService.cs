@@ -86,7 +86,7 @@ public class AnalyticsService : IAnalyticsService
                 ScenarioName = s.Name,
                 RetrievalCount = relatedQuestions.Count,
                 AvgSimilarityScore = relatedQuestions.Any(q => q.ConfidenceScore.HasValue) 
-                    ? relatedQuestions.Where(q => q.ConfidenceScore.HasValue).Average(q => q.ConfidenceScore.Value) 
+                    ? relatedQuestions.Where(q => q.ConfidenceScore.HasValue).Average(q => q.ConfidenceScore ?? 0) 
                     : 0,
                 LastUsed = relatedQuestions.OrderByDescending(q => q.CreatedAt).FirstOrDefault()?.CreatedAt
             };
