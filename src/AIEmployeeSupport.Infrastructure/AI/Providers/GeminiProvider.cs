@@ -1,0 +1,59 @@
+using System.Net.Http.Json;
+using System.Text.Json;
+using AIEmployeeSupport.Application.Interfaces.Services;
+
+namespace AIEmployeeSupport.Infrastructure.AI.Providers;
+
+public class GeminiProvider : BaseAIProvider
+{
+    public GeminiProvider(HttpClient httpClient, string apiKey) : base(httpClient, apiKey)
+    {
+        HttpClient.BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/models/");
+    }
+
+    public override async Task<AIResponse> GenerateAnswerAsync(AIRequest request, CancellationToken cancellationToken = default)
+    {
+        var systemPrompt = $@"{request.SystemPrompt}
+        
+You must always respond in JSON format matching exactly this schema:
+{{
+    ""answered"": boolean,
+    ""summary"": string or null,
+    ""steps"": array of strings,
+    ""reason"": string or null
+}}
+
+Retrieved Knowledge:
+{string.Join("\n---\n", request.RetrievedKnowledge)}";
+
+        var payload = new
+        {
+            system_instruction = new { parts = new[] { new { text = systemPrompt } } },
+            contents = new[]
+            {
+                new { role = "user", parts = new[] { new { text = request.QuestionText } } }
+            },
+            generationConfig = new
+            {
+                temperature = request.Temperature,
+                maxOutputTokens = request.MaxTokens,
+                responseMimeType = "application/json"
+            }
+        };
+
+        var url = $"{request.ModelName}:generateContent?key={ApiKey}";
+        var response = await HttpClient.PostAsJsonAsync(url, payload, cancellationToken);
+        var rawContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        HandleHttpError(response, rawContent);
+
+        using var doc = JsonDocument.Parse(rawContent);
+        var contentStr = doc.RootElement.GetProperty("candidates")[0].GetProperty("content").GetProperty("parts")[0].GetProperty("text").GetString();
+        
+        var aiResponse = JsonSerializer.Deserialize<AIResponse>(contentStr ?? "{}", new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+            ?? new AIResponse();
+            
+        aiResponse.RawResponse = rawContent;
+        return aiResponse;
+    }
+}

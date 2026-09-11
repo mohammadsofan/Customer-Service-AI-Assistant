@@ -1,5 +1,6 @@
 using AIEmployeeSupport.Application.Interfaces;
 using AIEmployeeSupport.Application.Interfaces.Services;
+using AIEmployeeSupport.Infrastructure.AI;
 using AIEmployeeSupport.Infrastructure.Persistence.Repositories;
 using AIEmployeeSupport.Infrastructure.Security;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +29,10 @@ public static class DependencyInjection
 
         // Services
         services.AddSingleton<IEncryptionService, EncryptionService>();
+
+        // AI Provider Factory & Http Client
+        services.AddHttpClient("AIProviderClient");
+        services.AddSingleton<IAIProviderFactory, AIProviderFactory>();
 
         return services;
     }
