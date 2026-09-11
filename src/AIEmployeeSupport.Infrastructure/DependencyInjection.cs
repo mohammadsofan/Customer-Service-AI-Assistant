@@ -38,7 +38,11 @@ public static class DependencyInjection
         services.AddSingleton<IEncryptionService, EncryptionService>();
 
         // AI Provider Factory & Http Client
-        services.AddHttpClient("AIProviderClient");
+        services.AddHttpClient("AIProviderClient", client =>
+        {
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            client.DefaultRequestHeaders.Accept.ParseAdd("application/json, text/plain, */*");
+        });
         services.AddSingleton<IAIProviderFactory, AIProviderFactory>();
 
         // Embedding Service

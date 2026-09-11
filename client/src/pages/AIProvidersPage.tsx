@@ -127,14 +127,14 @@ export function AIProvidersPage() {
   const handleTestConnection = async (provider: AiProvider) => {
     try {
       toast.loading('جاري اختبار الاتصال...', { id: 'test-conn' });
-      const success = await aiService.testConnection({ id: provider.id });
-      if (success) {
-        toast.success('تم الاتصال بنجاح بالمزود', { id: 'test-conn' });
+      const res = await aiService.testConnection({ id: provider.id });
+      if (res.success) {
+        toast.success(res.message || 'تم الاتصال بنجاح بالمزود', { id: 'test-conn' });
       } else {
-        toast.error('فشل الاتصال بالمزود، يرجى التحقق من المفتاح والرابط', { id: 'test-conn' });
+        toast.error(res.message || 'فشل الاتصال بالمزود، يرجى التحقق من المفتاح والرابط', { id: 'test-conn', duration: 7000 });
       }
-    } catch {
-      toast.error('فشل اختبار الاتصال بالمزود', { id: 'test-conn' });
+    } catch (err: any) {
+      toast.error(err?.message || 'فشل اختبار الاتصال بالمزود', { id: 'test-conn' });
     }
   };
 

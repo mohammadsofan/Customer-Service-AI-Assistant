@@ -116,16 +116,21 @@ export function AIConfigurationPage() {
   };
 
   const handleTestConnection = async () => {
+    const activeProvId = config.activeProviderId || config.providerId;
+    if (!activeProvId) {
+      toast.error('يرجى اختيار المزود أولاً لاختبار الاتصال');
+      return;
+    }
     try {
       setIsTesting(true);
-      const success = await aiService.testConnection(config);
-      if (success) {
-        toast.success('تم الاتصال بنجاح');
+      const res = await aiService.testConnection({ activeProviderId: activeProvId });
+      if (res.success) {
+        toast.success(res.message || 'تم الاتصال بنجاح بالمزود');
       } else {
-        toast.error('فشل الاتصال بالمزود');
+        toast.error(res.message || 'فشل الاتصال بالمزود', { duration: 7000 });
       }
-    } catch {
-      toast.error('فشل الاتصال بالمزود');
+    } catch (err: any) {
+      toast.error(err?.message || 'فشل الاتصال بالمزود');
     } finally {
       setIsTesting(false);
     }

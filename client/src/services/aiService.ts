@@ -117,16 +117,22 @@ const aiService = {
         return response.data;
     },
 
-    testConnection: async (config?: any): Promise<boolean> => {
+    testConnection: async (config?: any): Promise<{ success: boolean; message: string; latencyMs?: number }> => {
         try {
             const providerId = config?.activeProviderId || config?.providerId || config?.id;
             if (providerId) {
                 const res = await api.post<any>(`/ai/providers/${providerId}/test`);
-                return res.data?.success !== false;
+                const isSuccess = res.data?.success === true;
+                return {
+                    success: isSuccess,
+                    message: res.data?.message || (isSuccess ? 'تم الاتصال بنجاح بالمزود' : 'فشل الاتصال بالمزود'),
+                    latencyMs: res.data?.latencyMs
+                };
             }
-            return true;
-        } catch {
-            return false;
+            return { success: false, message: 'يرجى تحديد مزود لاختبار الاتصال' };
+        } catch (err: any) {
+            const msg = err.response?.data?.message || err.response?.data?.title || err.message || 'فشل الاتصال بالمزود';
+            return { success: false, message: msg };
         }
     }
 };

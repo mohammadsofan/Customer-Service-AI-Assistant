@@ -124,23 +124,41 @@ public class AIProviderService : IAIProviderService
         var provider = await _providerRepository.GetByIdAsync(id, cancellationToken);
         if (provider == null) throw new InvalidOperationException("Provider not found");
 
-        var apiKey = _encryptionService.Decrypt(provider.EncryptedApiKey);
+        string apiKey = string.Empty;
+        if (!string.IsNullOrWhiteSpace(provider.EncryptedApiKey))
+        {
+            try
+            {
+                apiKey = _encryptionService.Decrypt(provider.EncryptedApiKey);
+            }
+            catch
+            {
+                apiKey = provider.EncryptedApiKey;
+            }
+        }
+
         var client = _providerFactory.CreateClient(provider.ProviderType, apiKey, provider.BaseUrl);
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
-            // Simply attempt a basic generate to test connection
+            var activeModel = provider.Models?.FirstOrDefault(m => m.IsActive)?.ModelName;
+            var fallbackModel = provider.Models?.FirstOrDefault()?.ModelName;
+            var modelToUse = !string.IsNullOrWhiteSpace(activeModel)
+                ? activeModel
+                : (!string.IsNullOrWhiteSpace(fallbackModel) ? fallbackModel : "gpt-4o-mini");
+
+            // Attempt a basic request to test provider connection
             var response = await client.GenerateAnswerAsync(new AIRequest 
             { 
                 QuestionText = "Test connection",
-                ModelName = "default"
+                ModelName = modelToUse
             }, cancellationToken);
             
             return new ProviderTestResult 
             { 
                 Success = true, 
-                Message = "Connection successful", 
+                Message = $"Connection successful ({stopwatch.ElapsedMilliseconds}ms)", 
                 LatencyMs = stopwatch.ElapsedMilliseconds 
             };
         }
@@ -149,7 +167,7 @@ public class AIProviderService : IAIProviderService
             return new ProviderTestResult 
             { 
                 Success = false, 
-                Message = $"Connection failed: {ex.Message}", 
+                Message = ex.Message, 
                 LatencyMs = stopwatch.ElapsedMilliseconds 
             };
         }
