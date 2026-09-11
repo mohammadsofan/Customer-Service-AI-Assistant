@@ -1,3 +1,4 @@
+using AIEmployeeSupport.Application;
 using AIEmployeeSupport.Application.Common.Settings;
 using AIEmployeeSupport.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,9 @@ builder.Services.Configure<CorsSettings>(builder.Configuration.GetSection(CorsSe
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Application layer (validators, etc.)
+builder.Services.AddApplication();
 
 var corsSettings = builder.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>();
 
