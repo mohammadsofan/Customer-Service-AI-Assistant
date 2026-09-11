@@ -248,7 +248,6 @@ public class KnowledgeService : IKnowledgeService
             }, cancellationToken);
         }
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
         await _auditService.LogAsync(userId, AuditAction.ScenarioUpdated, "KnowledgeScenario", scenario.Id, null, cancellationToken);
 
         return await GetScenarioByIdAsync(scenario.Id, cancellationToken) ?? throw new Exception("Update failed.");

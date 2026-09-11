@@ -70,7 +70,49 @@ public class KnowledgeScenarioRepository : IKnowledgeScenarioRepository
 
     public async Task UpdateAsync(KnowledgeScenario scenario, CancellationToken cancellationToken = default)
     {
-        _context.KnowledgeScenarios.Update(scenario);
+        var existing = await _context.KnowledgeScenarios
+            .Include(s => s.ScenarioKeywords)
+            .Include(s => s.ResolutionSteps)
+            .FirstOrDefaultAsync(s => s.Id == scenario.Id, cancellationToken);
+
+        if (existing != null)
+        {
+            existing.Name = scenario.Name;
+            existing.Description = scenario.Description;
+            existing.CategoryId = scenario.CategoryId;
+            existing.Status = scenario.Status;
+            existing.UpdatedBy = scenario.UpdatedBy;
+            existing.UpdatedAt = DateTime.UtcNow;
+
+            _context.ScenarioKeywords.RemoveRange(existing.ScenarioKeywords);
+            foreach (var sk in scenario.ScenarioKeywords)
+            {
+                var newSk = new ScenarioKeyword { ScenarioId = existing.Id, KeywordId = sk.KeywordId };
+                _context.ScenarioKeywords.Add(newSk);
+                _context.Entry(newSk).State = EntityState.Added;
+            }
+
+            _context.ResolutionSteps.RemoveRange(existing.ResolutionSteps);
+            foreach (var step in scenario.ResolutionSteps)
+            {
+                var newStep = new ResolutionStep
+                {
+                    Id = Guid.NewGuid(),
+                    ScenarioId = existing.Id,
+                    StepOrder = step.StepOrder,
+                    StepText = step.StepText,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.ResolutionSteps.Add(newStep);
+                _context.Entry(newStep).State = EntityState.Added;
+            }
+        }
+        else
+        {
+            _context.KnowledgeScenarios.Update(scenario);
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
     }
 

@@ -1,6 +1,7 @@
 using System.Text;
 using AIEmployeeSupport.Application.Interfaces;
 using AIEmployeeSupport.Application.Interfaces.Services;
+using AIEmployeeSupport.Domain.Entities;
 using AIEmployeeSupport.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,6 +58,29 @@ public class EmbeddingBackgroundService : BackgroundService
         // So how do we get pending embeddings? I will use DbContext directly since it's Infrastructure layer.
         var dbContext = scope.ServiceProvider.GetRequiredService<AIEmployeeSupport.Infrastructure.Persistence.ApplicationDbContext>();
         
+        // Auto-seed embedding rows for any scenarios that do not have one
+        var scenariosWithoutEmbedding = await dbContext.KnowledgeScenarios
+            .Where(s => !dbContext.KnowledgeEmbeddings.Any(e => e.ScenarioId == s.Id))
+            .Take(10)
+            .ToListAsync(stoppingToken);
+
+        if (scenariosWithoutEmbedding.Any())
+        {
+            foreach (var s in scenariosWithoutEmbedding)
+            {
+                dbContext.KnowledgeEmbeddings.Add(new KnowledgeEmbedding
+                {
+                    Id = Guid.NewGuid(),
+                    ScenarioId = s.Id,
+                    Status = EmbeddingStatus.Pending,
+                    Content = $"{s.Name}\n{s.Description}",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
+            }
+            await dbContext.SaveChangesAsync(stoppingToken);
+        }
+
         var pendingEmbeddings = await dbContext.KnowledgeEmbeddings
             .Include(e => e.Scenario)
                 .ThenInclude(s => s.ScenarioKeywords)

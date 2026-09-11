@@ -26,10 +26,12 @@ public class KnowledgeEmbeddingRepository : IKnowledgeEmbeddingRepository
         if (existing != null)
         {
             existing.Content = embedding.Content;
-            existing.Embedding = embedding.Embedding;
+            if (embedding.Embedding != null && embedding.Embedding.Length > 0)
+            {
+                existing.Embedding = embedding.Embedding;
+            }
             existing.Status = embedding.Status;
             existing.UpdatedAt = DateTime.UtcNow;
-            _context.KnowledgeEmbeddings.Update(existing);
         }
         else
         {
@@ -56,12 +58,20 @@ public class KnowledgeEmbeddingRepository : IKnowledgeEmbeddingRepository
         var queryVector = DeserializeVector(vector);
 
         // Compute cosine similarity in C# application code
-        var results = embeddings
+        var scored = embeddings
             .Select(e => new
             {
                 Embedding = e,
                 Similarity = CosineSimilarity(queryVector, DeserializeVector(e.Embedding))
             })
+            .ToList();
+
+        foreach (var item in scored)
+        {
+            Console.WriteLine($"[RAG Sim] Scenario: '{item.Embedding.Scenario?.Name}' - Similarity: {item.Similarity:F4} (Threshold: {threshold})");
+        }
+
+        var results = scored
             .Where(r => r.Similarity >= threshold)
             .OrderByDescending(r => r.Similarity)
             .Take(topK)

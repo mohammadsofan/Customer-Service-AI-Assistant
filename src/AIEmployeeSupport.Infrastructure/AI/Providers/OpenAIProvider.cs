@@ -51,9 +51,23 @@ Retrieved Knowledge:
         HandleHttpError(response, rawContent);
 
         using var doc = JsonDocument.Parse(rawContent);
-        var contentStr = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
-        
-        var aiResponse = JsonSerializer.Deserialize<AIResponse>(contentStr ?? "{}", new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+        var contentStr = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString()?.Trim() ?? "{}";
+
+        if (contentStr.StartsWith("```"))
+        {
+            var firstLineEnd = contentStr.IndexOf('\n');
+            if (firstLineEnd != -1)
+            {
+                contentStr = contentStr.Substring(firstLineEnd + 1);
+            }
+            if (contentStr.EndsWith("```"))
+            {
+                contentStr = contentStr.Substring(0, contentStr.Length - 3);
+            }
+            contentStr = contentStr.Trim();
+        }
+
+        var aiResponse = JsonSerializer.Deserialize<AIResponse>(contentStr, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
             ?? new AIResponse();
             
         aiResponse.RawResponse = rawContent;
