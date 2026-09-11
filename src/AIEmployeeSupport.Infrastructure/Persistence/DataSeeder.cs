@@ -9,43 +9,66 @@ public static class DataSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context)
     {
-        // Only seed if database is empty
-        if (await context.Users.AnyAsync())
-            return;
-
         var passwordHasher = new PasswordHasher<User>();
-
-        // ── Users ──────────────────────────────────────────────
-
-        var adminId = Guid.NewGuid();
-        var employeeId = Guid.NewGuid();
         var now = DateTime.UtcNow;
 
-        var admin = new User
+        // ── Ensure Admins Exist ─────────────────────────────────
+        if (!await context.Users.AnyAsync(u => u.Email == "admin@company.com"))
         {
-            Id = adminId,
-            Email = "admin@system.local",
-            FullName = "مدير النظام",
-            Role = UserRole.Administrator,
-            IsActive = true,
-            CreatedAt = now,
-            UpdatedAt = now
-        };
-        admin.PasswordHash = passwordHasher.HashPassword(admin, "Admin@123");
+            var companyAdmin = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = "admin@company.com",
+                FullName = "مدير النظام",
+                Role = UserRole.Administrator,
+                IsActive = true,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+            companyAdmin.PasswordHash = passwordHasher.HashPassword(companyAdmin, "Admin123!");
+            context.Users.Add(companyAdmin);
+        }
 
-        var employee = new User
+        if (!await context.Users.AnyAsync(u => u.Email == "admin@system.local"))
         {
-            Id = employeeId,
-            Email = "employee@system.local",
-            FullName = "موظف تجريبي",
-            Role = UserRole.Employee,
-            IsActive = true,
-            CreatedAt = now,
-            UpdatedAt = now
-        };
-        employee.PasswordHash = passwordHasher.HashPassword(employee, "Employee@123");
+            var systemAdmin = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = "admin@system.local",
+                FullName = "مدير النظام",
+                Role = UserRole.Administrator,
+                IsActive = true,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+            systemAdmin.PasswordHash = passwordHasher.HashPassword(systemAdmin, "Admin@123");
+            context.Users.Add(systemAdmin);
+        }
 
-        context.Users.AddRange(admin, employee);
+        if (!await context.Users.AnyAsync(u => u.Email == "employee@company.com"))
+        {
+            var companyEmployee = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = "employee@company.com",
+                FullName = "موظف الدعم",
+                Role = UserRole.Employee,
+                IsActive = true,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+            companyEmployee.PasswordHash = passwordHasher.HashPassword(companyEmployee, "Employee123!");
+            context.Users.Add(companyEmployee);
+        }
+
+        await context.SaveChangesAsync();
+
+        // If categories already exist, we've already done knowledge seeding
+        if (await context.KnowledgeCategories.AnyAsync())
+            return;
+
+        var adminUser = await context.Users.FirstAsync(u => u.Role == UserRole.Administrator);
+        var adminId = adminUser.Id;
 
         // ── Knowledge Categories (Arabic) ──────────────────────
 
