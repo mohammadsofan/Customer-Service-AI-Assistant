@@ -1,0 +1,11 @@
+namespace AIEmployeeSupport.Application.DTOs.Knowledge;
+
+public class CreateScenarioRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public Guid CategoryId { get; set; }
+    public List<string> Keywords { get; set; } = new();
+    public List<string> ResolutionSteps { get; set; } = new();
+    public string Status { get; set; } = "Draft";
+}

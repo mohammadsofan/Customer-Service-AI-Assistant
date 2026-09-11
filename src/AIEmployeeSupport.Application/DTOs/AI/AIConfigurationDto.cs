@@ -1,0 +1,15 @@
+namespace AIEmployeeSupport.Application.DTOs.AI;
+
+public class AIConfigurationDto
+{
+    public Guid ActiveProviderId { get; set; }
+    public string ActiveProviderName { get; set; } = string.Empty;
+    public Guid ActiveModelId { get; set; }
+    public string ActiveModelName { get; set; } = string.Empty;
+    public double Temperature { get; set; }
+    public int MaxTokens { get; set; }
+    public double SimilarityThreshold { get; set; }
+    public int TopK { get; set; }
+    public string SystemPrompt { get; set; } = string.Empty;
+    public bool EnableAutoFailover { get; set; }
+}
