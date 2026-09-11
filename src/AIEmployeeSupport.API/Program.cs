@@ -70,6 +70,8 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
+builder.Services.AddScoped<Microsoft.AspNetCore.Identity.IPasswordHasher<AIEmployeeSupport.Domain.Entities.User>, Microsoft.AspNetCore.Identity.PasswordHasher<AIEmployeeSupport.Domain.Entities.User>>();
+
 // Application layer (validators, etc.)
 builder.Services.AddApplication();
 
@@ -104,6 +106,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.EnsureCreatedAsync();
     await DataSeeder.SeedAsync(dbContext);
 }
 
@@ -122,7 +125,7 @@ app.Use(async (context, next) =>
     context.Response.Headers.Append("X-Frame-Options", "DENY");
     context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
     context.Response.Headers.Append("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-    context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://localhost:7119; frame-ancestors 'none';");
+    context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://localhost:5073; frame-ancestors 'none';");
     context.Response.Headers.Remove("X-Powered-By");
     await next();
 });
