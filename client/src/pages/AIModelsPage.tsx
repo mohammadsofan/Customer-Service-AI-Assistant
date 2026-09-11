@@ -69,15 +69,20 @@ export function AIModelsPage() {
     
     try {
       setIsSaving(true);
-      await aiService.createModel({
-        providerId,
-        modelName: name.trim()
-      });
-      toast.success(currentModel ? 'تم تحديث النموذج بنجاح' : 'تمت إضافة النموذج بنجاح');
+      if (currentModel) {
+        await aiService.updateModel(currentModel.id, name.trim());
+        toast.success('تم تحديث النموذج بنجاح');
+      } else {
+        await aiService.createModel({
+          providerId,
+          modelName: name.trim()
+        });
+        toast.success('تمت إضافة النموذج بنجاح');
+      }
       setIsModalOpen(false);
       await loadData();
     } catch (error: any) {
-      const msg = error.response?.data?.message || 'فشل حفظ النموذج';
+      const msg = error.response?.data?.message || error.response?.data?.title || error.message || 'فشل حفظ النموذج';
       toast.error(msg);
     } finally {
       setIsSaving(false);
@@ -90,15 +95,17 @@ export function AIModelsPage() {
         await aiService.deleteModel(id);
         toast.success('تم الحذف بنجاح');
         await loadData();
-      } catch (error) {
-        toast.error('فشل حذف النموذج');
+      } catch (error: any) {
+        const msg = error.response?.data?.message || error.response?.data?.title || error.message || 'فشل حذف النموذج';
+        toast.error(msg);
       }
     }
   };
 
+  const activeModels = models.filter(m => m.isActive !== false);
   const filteredModels = filterProviderId 
-    ? models.filter(m => m.providerId === filterProviderId)
-    : models;
+    ? activeModels.filter(m => m.providerId === filterProviderId)
+    : activeModels;
 
   const columns: Column<AiModel>[] = [
     { key: 'name', header: 'اسم النموذج' },
@@ -164,7 +171,7 @@ export function AIModelsPage() {
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>
               إلغاء
             </Button>
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} isLoading={isSaving}>
               حفظ
             </Button>
           </div>

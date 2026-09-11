@@ -89,7 +89,7 @@ export function AIProvidersPage() {
       setIsModalOpen(false);
       await loadProviders();
     } catch (error: any) {
-      const msg = error.response?.data?.message || 'فشل حفظ المزود';
+      const msg = error.response?.data?.message || error.response?.data?.title || error.message || 'فشل حفظ المزود';
       toast.error(msg);
     } finally {
       setIsSaving(false);
@@ -102,8 +102,9 @@ export function AIProvidersPage() {
         await aiService.deleteProvider(id);
         toast.success('تم الحذف بنجاح');
         await loadProviders();
-      } catch (error) {
-        toast.error('فشل حذف المزود');
+      } catch (error: any) {
+        const msg = error.response?.data?.message || error.response?.data?.title || error.message || 'فشل حذف المزود';
+        toast.error(msg);
       }
     }
   };

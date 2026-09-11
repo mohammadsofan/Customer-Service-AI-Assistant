@@ -81,6 +81,11 @@ const aiService = {
         return response.data;
     },
 
+    updateModel: async (id: string, modelName: string): Promise<AiModel> => {
+        const response = await api.put<AiModel>(`/ai/models/${id}`, { modelName });
+        return response.data;
+    },
+
     deleteModel: async (id: string): Promise<void> => {
         await api.delete(`/ai/models/${id}`);
     },

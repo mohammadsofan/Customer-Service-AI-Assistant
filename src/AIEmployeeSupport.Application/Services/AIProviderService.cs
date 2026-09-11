@@ -9,17 +9,20 @@ namespace AIEmployeeSupport.Application.Services;
 public class AIProviderService : IAIProviderService
 {
     private readonly IAIProviderRepository _providerRepository;
+    private readonly IAIConfigurationRepository _configurationRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEncryptionService _encryptionService;
     private readonly IAIProviderFactory _providerFactory;
 
     public AIProviderService(
         IAIProviderRepository providerRepository,
+        IAIConfigurationRepository configurationRepository,
         IUnitOfWork unitOfWork,
         IEncryptionService encryptionService,
         IAIProviderFactory providerFactory)
     {
         _providerRepository = providerRepository;
+        _configurationRepository = configurationRepository;
         _unitOfWork = unitOfWork;
         _encryptionService = encryptionService;
         _providerFactory = providerFactory;
@@ -82,6 +85,12 @@ public class AIProviderService : IAIProviderService
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        var config = await _configurationRepository.GetAsync(cancellationToken);
+        if (config != null && config.ActiveProviderId == id)
+        {
+            throw new InvalidOperationException("لا يمكن حذف هذا المزود لأنه محدد كالمزود النشط حالياً في إعدادات النظام. يرجى اختيار مزود نشط آخر أولاً.");
+        }
+
         await _providerRepository.DeleteAsync(id, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }

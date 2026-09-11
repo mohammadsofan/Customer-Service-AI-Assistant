@@ -77,6 +77,12 @@ public class ExceptionHandlingMiddleware
                 errorCode = "BAD_REQUEST";
                 message = argEx.Message;
                 break;
+
+            case InvalidOperationException invEx:
+                statusCode = HttpStatusCode.BadRequest;
+                errorCode = "INVALID_OPERATION";
+                message = invEx.Message;
+                break;
         }
 
         var response = new

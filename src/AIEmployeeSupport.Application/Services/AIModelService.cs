@@ -9,12 +9,18 @@ namespace AIEmployeeSupport.Application.Services;
 public class AIModelService : IAIModelService
 {
     private readonly IAIModelRepository _modelRepository;
+    private readonly IAIConfigurationRepository _configurationRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditService _auditService;
 
-    public AIModelService(IAIModelRepository modelRepository, IUnitOfWork unitOfWork, IAuditService auditService)
+    public AIModelService(
+        IAIModelRepository modelRepository,
+        IAIConfigurationRepository configurationRepository,
+        IUnitOfWork unitOfWork,
+        IAuditService auditService)
     {
         _modelRepository = modelRepository;
+        _configurationRepository = configurationRepository;
         _unitOfWork = unitOfWork;
         _auditService = auditService;
     }
@@ -22,7 +28,7 @@ public class AIModelService : IAIModelService
     public async Task<IEnumerable<AIModelDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var models = await _modelRepository.GetAllAsync(cancellationToken);
-        return models.Select(m => new AIModelDto
+        return models.Where(m => m.IsActive).Select(m => new AIModelDto
         {
             Id = m.Id,
             ProviderId = m.ProviderId,
@@ -34,7 +40,7 @@ public class AIModelService : IAIModelService
     public async Task<IEnumerable<AIModelDto>> GetByProviderIdAsync(Guid providerId, CancellationToken cancellationToken = default)
     {
         var models = await _modelRepository.GetAllAsync(cancellationToken);
-        return models.Where(m => m.ProviderId == providerId).Select(m => new AIModelDto
+        return models.Where(m => m.ProviderId == providerId && m.IsActive).Select(m => new AIModelDto
         {
             Id = m.Id,
             ProviderId = m.ProviderId,
@@ -94,10 +100,13 @@ public class AIModelService : IAIModelService
         var model = await _modelRepository.GetByIdAsync(id, cancellationToken);
         if (model == null) throw new NotFoundException(nameof(AIModel), id);
 
-        model.IsActive = false;
-        model.UpdatedAt = DateTime.UtcNow;
-        
-        await _modelRepository.UpdateAsync(model, cancellationToken);
+        var config = await _configurationRepository.GetAsync(cancellationToken);
+        if (config != null && config.ActiveModelId == id)
+        {
+            throw new InvalidOperationException("لا يمكن حذف هذا النموذج لأنه محدد كالنموذج النشط حالياً في إعدادات النظام. يرجى اختيار نموذج نشط آخر أولاً.");
+        }
+
+        await _modelRepository.DeleteAsync(id, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }
