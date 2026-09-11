@@ -1,6 +1,7 @@
 using AIEmployeeSupport.Application.Interfaces;
 using AIEmployeeSupport.Application.Interfaces.Services;
 using AIEmployeeSupport.Infrastructure.AI;
+using AIEmployeeSupport.Infrastructure.Persistence;
 using AIEmployeeSupport.Infrastructure.Persistence.Repositories;
 using AIEmployeeSupport.Infrastructure.Security;
 using Microsoft.Extensions.DependencyInjection;

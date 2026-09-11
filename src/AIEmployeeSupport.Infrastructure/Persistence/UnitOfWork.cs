@@ -1,7 +1,7 @@
 using AIEmployeeSupport.Application.Interfaces;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace AIEmployeeSupport.Infrastructure.Persistence.Repositories;
+namespace AIEmployeeSupport.Infrastructure.Persistence;
 
 public class UnitOfWork : IUnitOfWork
 {
