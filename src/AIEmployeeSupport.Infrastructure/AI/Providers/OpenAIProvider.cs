@@ -41,7 +41,7 @@ Retrieved Knowledge:
                 new { role = "user", content = request.QuestionText }
             },
             temperature = request.Temperature,
-            max_tokens = request.MaxTokens,
+            max_tokens = request.MaxTokens > 0 ? request.MaxTokens : 256,
             response_format = new { type = "json_object" }
         };
 

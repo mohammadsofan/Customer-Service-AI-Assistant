@@ -152,7 +152,9 @@ public class AIProviderService : IAIProviderService
             var response = await client.GenerateAnswerAsync(new AIRequest 
             { 
                 QuestionText = "Test connection",
-                ModelName = modelToUse
+                ModelName = modelToUse,
+                MaxTokens = 256,
+                Temperature = 0.5
             }, cancellationToken);
             
             return new ProviderTestResult 
