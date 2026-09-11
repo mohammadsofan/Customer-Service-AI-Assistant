@@ -34,6 +34,10 @@ public static class DependencyInjection
         services.AddHttpClient("AIProviderClient");
         services.AddSingleton<IAIProviderFactory, AIProviderFactory>();
 
+        // Embedding Service
+        services.AddHttpClient("EmbeddingClient");
+        services.AddScoped<IEmbeddingService, EmbeddingService>();
+
         return services;
     }
 }
