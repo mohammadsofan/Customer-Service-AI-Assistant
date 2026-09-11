@@ -1,7 +1,7 @@
 using AIEmployeeSupport.Application.Interfaces.Services;
 using AIEmployeeSupport.Domain.Enums;
 
-namespace AIEmployeeSupport.Infrastructure.AI;
+namespace AIEmployeeSupport.Application.Interfaces.Services;
 
 public interface IAIProviderFactory
 {

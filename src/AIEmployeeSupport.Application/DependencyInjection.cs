@@ -1,3 +1,5 @@
+using AIEmployeeSupport.Application.Interfaces.Services;
+using AIEmployeeSupport.Application.Services;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,6 +11,19 @@ public static class DependencyInjection
     {
         // Register all FluentValidation validators from this assembly
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+
+        // Register application services
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IEmployeeService, EmployeeService>();
+        services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IKnowledgeService, KnowledgeService>();
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IKeywordService, KeywordService>();
+        services.AddScoped<IRAGService, RAGService>();
+        services.AddScoped<IAIFailoverService, AIFailoverService>();
+        services.AddScoped<IAIProviderService, AIProviderService>();
+        services.AddScoped<IAIConfigurationService, AIConfigurationService>();
+        services.AddScoped<IAnalyticsService, AnalyticsService>();
 
         return services;
     }

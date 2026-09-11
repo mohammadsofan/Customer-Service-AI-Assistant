@@ -45,6 +45,9 @@ public static class DependencyInjection
         services.AddHttpClient("EmbeddingClient");
         services.AddScoped<IEmbeddingService, EmbeddingService>();
 
+        // Background Services
+        services.AddHostedService<AIEmployeeSupport.Infrastructure.Services.EmbeddingBackgroundService>();
+
         return services;
     }
 }
