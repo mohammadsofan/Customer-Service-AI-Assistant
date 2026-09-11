@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIEmployeeSupport.Infrastru
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIEmployeeSupport.API", "AIEmployeeSupport.API\AIEmployeeSupport.API.csproj", "{34800A3E-F5E1-4DA5-A073-22DF3D629814}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIEmployeeSupport.Tests", "..\tests\AIEmployeeSupport.Tests\AIEmployeeSupport.Tests.csproj", "{ACBE9EA9-FA25-4C4B-8847-7E9DA7B3423E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIEmployeeSupport.IntegrationTests", "..\tests\AIEmployeeSupport.IntegrationTests\AIEmployeeSupport.IntegrationTests.csproj", "{CAF9CD8E-C4FD-487D-9F81-A99ECD921949}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +40,13 @@ Global
 		{34800A3E-F5E1-4DA5-A073-22DF3D629814}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{34800A3E-F5E1-4DA5-A073-22DF3D629814}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{34800A3E-F5E1-4DA5-A073-22DF3D629814}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACBE9EA9-FA25-4C4B-8847-7E9DA7B3423E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACBE9EA9-FA25-4C4B-8847-7E9DA7B3423E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACBE9EA9-FA25-4C4B-8847-7E9DA7B3423E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACBE9EA9-FA25-4C4B-8847-7E9DA7B3423E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CAF9CD8E-C4FD-487D-9F81-A99ECD921949}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CAF9CD8E-C4FD-487D-9F81-A99ECD921949}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CAF9CD8E-C4FD-487D-9F81-A99ECD921949}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CAF9CD8E-C4FD-487D-9F81-A99ECD921949}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
