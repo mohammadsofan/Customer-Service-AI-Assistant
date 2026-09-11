@@ -1,5 +1,7 @@
 using AIEmployeeSupport.Application.Interfaces;
+using AIEmployeeSupport.Application.Interfaces.Services;
 using AIEmployeeSupport.Infrastructure.Persistence.Repositories;
+using AIEmployeeSupport.Infrastructure.Security;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AIEmployeeSupport.Infrastructure;
@@ -23,6 +25,9 @@ public static class DependencyInjection
         services.AddScoped<IAIRequestLogRepository, AIRequestLogRepository>();
         services.AddScoped<IKnowledgeScenarioVersionRepository, KnowledgeScenarioVersionRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Services
+        services.AddSingleton<IEncryptionService, EncryptionService>();
 
         return services;
     }
