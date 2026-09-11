@@ -143,6 +143,19 @@ public class AIProviderService : IAIProviderService
 
     private AIProviderDto MapToDto(AIProvider provider)
     {
+        string rawApiKey = string.Empty;
+        if (!string.IsNullOrWhiteSpace(provider.EncryptedApiKey))
+        {
+            try
+            {
+                rawApiKey = _encryptionService.Decrypt(provider.EncryptedApiKey);
+            }
+            catch
+            {
+                rawApiKey = provider.EncryptedApiKey;
+            }
+        }
+
         return new AIProviderDto
         {
             Id = provider.Id,
@@ -150,7 +163,7 @@ public class AIProviderService : IAIProviderService
             ProviderType = provider.ProviderType.ToString(),
             IsActive = provider.IsActive,
             FallbackPriority = provider.FallbackPriority,
-            MaskedApiKey = MaskApiKey(_encryptionService.Decrypt(provider.EncryptedApiKey)),
+            MaskedApiKey = MaskApiKey(rawApiKey),
             ModelCount = provider.Models?.Count ?? 0,
             CreatedAt = provider.CreatedAt
         };

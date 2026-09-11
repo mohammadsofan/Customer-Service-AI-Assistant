@@ -11,7 +11,6 @@ namespace AIEmployeeSupport.API.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/[controller]")]
-[Route("api/admin/audit")]
 [Route("api/audit/logs")]
 [Authorize(Policy = "AdminOnly")]
 public class AuditController : ControllerBase

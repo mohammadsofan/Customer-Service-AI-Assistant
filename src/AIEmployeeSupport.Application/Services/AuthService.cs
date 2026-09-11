@@ -67,7 +67,7 @@ public class AuthService : IAuthService
         
         try
         {
-            tokenHandler.ValidateToken(request.RefreshToken, new TokenValidationParameters
+            var principal = tokenHandler.ValidateToken(request.RefreshToken, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
@@ -77,11 +77,16 @@ public class AuthService : IAuthService
                 ValidAudience = _jwtSettings.Audience,
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero
-            }, out SecurityToken validatedToken);
+            }, out _);
 
-            var jwtToken = (JwtSecurityToken)validatedToken;
-            var userIdStr = jwtToken.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value;
-            var userId = Guid.Parse(userIdStr);
+            var userIdStr = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? principal.FindFirst("nameid")?.Value
+                ?? principal.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+            {
+                throw new UnauthorizedAccessException("Invalid token.");
+            }
 
             var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
             if (user == null || !user.IsActive)
