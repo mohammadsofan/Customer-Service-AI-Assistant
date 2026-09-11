@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+
+# Visual Studio
+.vs
+*.user
+*.suo
+
+# .NET
+bin/
+obj/
+TestResults/
+*.log
+
+# Node
+node_modules/
+dist/
+build/
+.npm
+
+# Docker
+docker-compose*.yml
+.dockerignore
+Dockerfile*
+
+# Env
+.env

@@ -1,0 +1,28 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /app
+
+# Copy solution and project files to restore dependencies
+COPY src/*.sln ./src/
+COPY src/AIEmployeeSupport.Domain/*.csproj ./src/AIEmployeeSupport.Domain/
+COPY src/AIEmployeeSupport.Application/*.csproj ./src/AIEmployeeSupport.Application/
+COPY src/AIEmployeeSupport.Infrastructure/*.csproj ./src/AIEmployeeSupport.Infrastructure/
+COPY src/AIEmployeeSupport.API/*.csproj ./src/AIEmployeeSupport.API/
+
+# Restore dependencies
+RUN dotnet restore src/AIEmployeeSupport.sln
+
+# Copy the remaining source code
+COPY src/ ./src/
+
+# Build and publish the API project
+WORKDIR /app/src/AIEmployeeSupport.API
+RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
+
+# Generate runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+
+# Expose port and start
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "AIEmployeeSupport.API.dll"]

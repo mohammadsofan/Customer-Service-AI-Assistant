@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  db:
+    ports:
+      - "1433:1433"
+      
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+      target: build
+    volumes:
+      - ./src:/app/src
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    # Override entrypoint to use dotnet watch for hot-reload
+    command: ["dotnet", "watch", "run", "--project", "src/AIEmployeeSupport.API", "--no-hot-reload"]
+    ports:
+      - "5000:8080"
+      - "7119:7119"
+
+  client:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    command: ["npm", "run", "dev", "--", "--host"]
+    ports:
+      - "5173:5173"
