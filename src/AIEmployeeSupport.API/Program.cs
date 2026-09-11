@@ -1,5 +1,6 @@
 using AIEmployeeSupport.Application;
 using AIEmployeeSupport.Application.Common.Settings;
+using AIEmployeeSupport.Infrastructure;
 using AIEmployeeSupport.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +17,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Application layer (validators, etc.)
 builder.Services.AddApplication();
+
+// Infrastructure layer (repositories, etc.)
+builder.Services.AddInfrastructure();
 
 var corsSettings = builder.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>();
 
