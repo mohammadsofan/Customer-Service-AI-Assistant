@@ -49,7 +49,7 @@ export function AIModelsPage() {
   const handleOpenModal = (model?: AiModel) => {
     if (model) {
       setCurrentModel(model);
-      setName(model.name);
+      setName(model.name || model.modelName || '');
       setProviderId(model.providerId);
     } else {
       setCurrentModel(null);

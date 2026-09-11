@@ -45,7 +45,7 @@ export const AnalyticsPage = () => {
   const unansweredColumns = [
     { key: 'id', header: 'المعرف' },
     { key: 'question', header: 'السؤال' },
-    { key: 'timestamp', header: 'الوقت', cell: (item: UnansweredQuestion) => new Date(item.timestamp).toLocaleString('ar-EG') },
+    { key: 'timestamp', header: 'الوقت', cell: (item: UnansweredQuestion) => new Date(item.timestamp || Date.now()).toLocaleString('ar-EG') },
     { key: 'employeeId', header: 'معرف الموظف', cell: (item: UnansweredQuestion) => item.employeeId || 'غير متوفر' }
   ];
 
@@ -54,10 +54,10 @@ export const AnalyticsPage = () => {
       <h2 className="text-2xl font-bold mb-6">الإحصائيات</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <MetricCard title="إجمالي الأسئلة" value={overview.totalQuestions} />
-        <MetricCard title="تمت الإجابة" value={overview.answeredQuestions} />
-        <MetricCard title="لا توجد إجابة" value={overview.unansweredQuestions} />
-        <MetricCard title="نسبة النجاح" value={`${(overview.successRate * 100).toFixed(1)}%`} />
+        <MetricCard title="إجمالي الأسئلة" value={overview.totalQuestions || 0} />
+        <MetricCard title="تمت الإجابة" value={overview.answeredQuestions || 0} />
+        <MetricCard title="لا توجد إجابة" value={overview.unansweredQuestions || 0} />
+        <MetricCard title="نسبة النجاح" value={`${((overview.successRate ?? 0) * 100).toFixed(1)}%`} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

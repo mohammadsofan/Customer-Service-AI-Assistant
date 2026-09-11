@@ -117,7 +117,7 @@ export function AIConfigurationPage() {
             label="النموذج النشط"
             value={config.modelId}
             onChange={(e) => setConfig({ ...config, modelId: e.target.value })}
-            options={[{ value: '', label: 'اختر النموذج' }, ...models.map(m => ({ value: m.id, label: m.name }))]}
+            options={[{ value: '', label: 'اختر النموذج' }, ...models.map(m => ({ value: m.id, label: m.name || m.modelName || 'Model' }))]}
             disabled={!config.providerId}
           />
         </div>

@@ -8,77 +8,164 @@ import {
   MessageSquare, 
   BarChart2, 
   FileText,
-  LogOut
+  LogOut,
+  Sliders,
+  Cpu,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 
-const sidebarItems = [
-  { name: 'الرئيسية', path: '/admin', icon: LayoutDashboard },
-  { name: 'قاعدة المعرفة', path: '/admin/knowledge', icon: BookOpen },
-  { name: 'الذكاء الاصطناعي', path: '/admin/ai', icon: Bot },
-  { name: 'الموظفون', path: '/admin/employees', icon: Users },
-  { name: 'الأسئلة', path: '/admin/questions', icon: MessageSquare },
-  { name: 'الإحصائيات', path: '/admin/analytics', icon: BarChart2 },
-  { name: 'سجل التدقيق', path: '/admin/audit', icon: FileText },
+const navGroups = [
+  {
+    title: 'نظرة عامة',
+    items: [
+      { name: 'لوحة التحكم', path: '/admin', icon: LayoutDashboard },
+      { name: 'الأسئلة والاستفسارات', path: '/admin/questions', icon: MessageSquare },
+      { name: 'التحليلات والتقارير', path: '/admin/analytics', icon: BarChart2 },
+    ]
+  },
+  {
+    title: 'إدارة المعرفة',
+    items: [
+      { name: 'سيناريوهات الدعم', path: '/admin/knowledge', icon: BookOpen },
+      { name: 'التصنيفات', path: '/admin/knowledge/categories', icon: Layers },
+      { name: 'الكلمات المفتاحية', path: '/admin/knowledge/keywords', icon: Sparkles },
+    ]
+  },
+  {
+    title: 'الذكاء الاصطناعي',
+    items: [
+      { name: 'إعدادات النموذج', path: '/admin/ai', icon: Sliders },
+      { name: 'مزودو الخدمة', path: '/admin/ai/providers', icon: Cpu },
+      { name: 'نماذج الذكاء', path: '/admin/ai/models', icon: Bot },
+    ]
+  },
+  {
+    title: 'النظام والموظفون',
+    items: [
+      { name: 'فريق العمل', path: '/admin/employees', icon: Users },
+      { name: 'سجل التدقيق والأمان', path: '/admin/audit', icon: FileText },
+    ]
+  }
 ];
 
 export const AdminLayout = () => {
   const { logout, user } = useAuth();
   const location = useLocation();
 
+  const allItems = navGroups.flatMap(g => g.items);
+  const currentItem = allItems.find(item => item.path === location.pathname);
+
   return (
-    <div dir="rtl" className="flex h-screen bg-gray-100 font-sans">
+    <div dir="rtl" className="flex h-screen bg-slate-100/70 font-sans overflow-hidden">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-l border-gray-200 flex flex-col">
-        <div className="h-16 flex items-center justify-center border-b border-gray-200">
-          <h1 className="text-xl font-bold text-blue-600">لوحة الإدارة</h1>
+      <aside className="w-72 bg-slate-900 text-slate-300 flex flex-col shadow-2xl z-20 border-l border-slate-800">
+        {/* Brand Header */}
+        <div className="h-20 px-6 flex items-center gap-3.5 border-b border-slate-800/80 bg-slate-950/40">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
+            <Bot className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="font-bold text-base text-white tracking-tight flex items-center gap-1.5">
+              <span>مساعد الدعم الذكي</span>
+            </h1>
+            <span className="text-xs text-blue-400 font-medium flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+              لوحة الإدارة المركزية
+            </span>
+          </div>
         </div>
-        <nav className="flex-1 overflow-y-auto py-4">
-          <ul className="space-y-1 px-2">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              return (
-                <li key={item.path}>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto px-4 py-5 space-y-6">
+          {navGroups.map((group, idx) => (
+            <div key={idx} className="space-y-1.5">
+              <div className="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                {group.title}
+              </div>
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                return (
                   <Link
+                    key={item.path}
                     to={item.path}
-                    className={`flex items-center px-4 py-2.5 text-sm font-medium rounded-md transition-colors ${
+                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                       isActive
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 font-semibold'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                     }`}
                   >
-                    <Icon className="ml-3 h-5 w-5 flex-shrink-0" />
-                    {item.name}
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                    <span>{item.name}</span>
                   </Link>
-                </li>
-              );
-            })}
-          </ul>
+                );
+              })}
+            </div>
+          ))}
         </nav>
-      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
-          <div className="text-xl font-semibold text-gray-800">
-            {sidebarItems.find(item => item.path === location.pathname)?.name || 'لوحة الإدارة'}
-          </div>
-          <div className="flex items-center space-x-4 space-x-reverse">
-            <span className="text-sm text-gray-700">{user?.username || 'المدير'}</span>
+        {/* User Card & Logout in Footer */}
+        <div className="p-4 border-t border-slate-800/80 bg-slate-950/50">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <div className="w-9 h-9 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 flex items-center justify-center font-bold text-sm shrink-0">
+                {(user?.fullName || user?.email || 'M')[0].toUpperCase()}
+              </div>
+              <div className="overflow-hidden">
+                <div className="text-sm font-semibold text-white truncate">
+                  {user?.fullName || user?.username || 'مدير النظام'}
+                </div>
+                <div className="text-xs text-slate-400 truncate dir-ltr text-right">
+                  {user?.email}
+                </div>
+              </div>
+            </div>
+
             <button
               onClick={logout}
-              className="flex items-center text-sm text-red-600 hover:text-red-800 transition-colors"
+              title="تسجيل الخروج"
+              className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
             >
-              <LogOut className="ml-1.5 h-4 w-4" />
-              خروج
+              <LogOut className="w-5 h-5" />
             </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Container */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Header */}
+        <header className="h-20 bg-white border-b border-slate-200/80 px-8 flex items-center justify-between shadow-xs z-10">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+              {currentItem?.name || 'لوحة الإدارة'}
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              إدارة العمليات المعرفية والذكاء الاصطناعي بكفاءة
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>النظام متصل ونشط</span>
+            </div>
+
+            <Link
+              to="/support"
+              className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-1.5"
+            >
+              <span>بوابة الموظف</span>
+            </Link>
           </div>
         </header>
 
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
-          <Outlet />
+        {/* Page Content Viewport */}
+        <main className="flex-1 overflow-y-auto p-8">
+          <div className="max-w-7xl mx-auto">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

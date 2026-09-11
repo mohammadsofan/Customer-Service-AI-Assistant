@@ -19,7 +19,7 @@ export function KeywordsPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<string | number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export function KeywordsPage() {
     }
   };
 
-  const handleDeleteClick = (id: number) => {
+  const handleDeleteClick = (id: string | number) => {
     setDeletingId(id);
     setIsDeleteOpen(true);
   };

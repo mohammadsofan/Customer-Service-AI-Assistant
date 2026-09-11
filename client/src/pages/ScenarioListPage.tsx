@@ -28,7 +28,7 @@ export function ScenarioListPage() {
   const [statusFilter, setStatusFilter] = useState('');
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<string | number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export function ScenarioListPage() {
     }
   };
 
-  const handleDeleteClick = (id: number) => {
+  const handleDeleteClick = (id: string | number) => {
     setDeletingId(id);
     setIsDeleteOpen(true);
   };
@@ -84,14 +84,19 @@ export function ScenarioListPage() {
   };
 
   const filteredScenarios = scenarios.filter((s) => {
-    const matchesSearch = s.title?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter ? s.categoryId === Number(categoryFilter) : true;
+    const titleOrName = (s.title || s.name || '').toLowerCase();
+    const matchesSearch = titleOrName.includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter ? String(s.categoryId) === String(categoryFilter) : true;
     const matchesStatus = statusFilter ? s.status === statusFilter : true;
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
   const columns = [
-    { key: 'title', header: 'العنوان' },
+    { 
+      key: 'title', 
+      header: 'العنوان',
+      cell: (item: ExtendedScenario) => item.title || item.name || 'بدون عنوان'
+    },
     { 
       key: 'categoryId', 
       header: 'التصنيف',

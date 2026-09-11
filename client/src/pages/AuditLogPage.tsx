@@ -33,7 +33,7 @@ export const AuditLogPage = () => {
     if (!search) return logs;
     return logs.filter(log => 
       log.action.includes(search) || 
-      log.details.includes(search) || 
+      (log.details || '').includes(search) || 
       log.userId.includes(search)
     );
   }, [logs, search]);

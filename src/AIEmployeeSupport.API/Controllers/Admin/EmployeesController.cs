@@ -1,5 +1,10 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using AIEmployeeSupport.Application.DTOs.Common;
+using AIEmployeeSupport.Application.DTOs.Employees;
 using AIEmployeeSupport.Application.Interfaces.Services;
 
 namespace AIEmployeeSupport.API.Controllers.Admin;
@@ -18,17 +23,46 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetAll() => Ok();
+    public async Task<IActionResult> GetAll([FromQuery] PaginatedRequest request, CancellationToken cancellationToken)
+    {
+        request ??= new PaginatedRequest { Page = 1, PageSize = 100 };
+        var result = await _employeeService.GetAllAsync(request, cancellationToken);
+        return Ok(result);
+    }
 
     [HttpGet("{id}")]
-    public IActionResult GetById(int id) => Ok();
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _employeeService.GetByIdAsync(id, cancellationToken);
+        if (result == null) return NotFound();
+        return Ok(result);
+    }
 
     [HttpPost]
-    public IActionResult Create() => Ok();
+    public async Task<IActionResult> Create([FromBody] CreateEmployeeRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _employeeService.CreateAsync(request, cancellationToken);
+        return Ok(result);
+    }
 
     [HttpPut("{id}")]
-    public IActionResult Update(int id) => Ok();
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateEmployeeRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _employeeService.UpdateAsync(id, request, cancellationToken);
+        return Ok(result);
+    }
 
-    [HttpPatch("{id}/status")]
-    public IActionResult UpdateStatus(int id) => Ok();
+    [HttpPatch("{id}/activate")]
+    public async Task<IActionResult> Activate(Guid id, CancellationToken cancellationToken)
+    {
+        await _employeeService.ActivateAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPatch("{id}/deactivate")]
+    public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
+    {
+        await _employeeService.DeactivateAsync(id, cancellationToken);
+        return NoContent();
+    }
 }
