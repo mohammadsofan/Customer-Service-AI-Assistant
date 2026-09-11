@@ -49,6 +49,10 @@ const supportService = {
     getQuestionHistory: async (params: PaginatedRequest): Promise<PaginatedResponse<QuestionHistoryDto>> => {
         const response = await api.get<PaginatedResponse<QuestionHistoryDto>>('/support/questions/history', { params });
         return response.data;
+    },
+    getAllQuestions: async (params: PaginatedRequest & { status?: string, date?: string }): Promise<PaginatedResponse<QuestionHistoryDto>> => {
+        const response = await api.get<PaginatedResponse<QuestionHistoryDto>>('/admin/questions', { params });
+        return response.data;
     }
 };
 

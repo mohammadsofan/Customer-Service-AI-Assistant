@@ -5,6 +5,9 @@ export interface AnalyticsOverview {
     answeredQuestions: number;
     unansweredQuestions: number;
     successRate: number;
+    questionsToday?: number;
+    escalated?: number;
+    avgResponseTime?: string;
 }
 
 export interface QuestionAnalytics {
