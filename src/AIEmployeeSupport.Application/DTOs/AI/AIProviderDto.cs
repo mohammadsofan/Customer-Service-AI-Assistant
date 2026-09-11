@@ -8,6 +8,7 @@ public class AIProviderDto
     public bool IsActive { get; set; }
     public int FallbackPriority { get; set; }
     public string MaskedApiKey { get; set; } = string.Empty;
+    public string? BaseUrl { get; set; }
     public int ModelCount { get; set; }
     public DateTime CreatedAt { get; set; }
 }

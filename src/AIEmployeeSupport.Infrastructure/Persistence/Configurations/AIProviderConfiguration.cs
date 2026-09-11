@@ -26,6 +26,10 @@ public class AIProviderConfiguration : IEntityTypeConfiguration<AIProvider>
             .IsRequired()
             .HasMaxLength(1024);
 
+        builder.Property(p => p.BaseUrl)
+            .HasMaxLength(1000)
+            .IsRequired(false);
+
         builder.Property(p => p.IsActive)
             .IsRequired()
             .HasDefaultValue(false);

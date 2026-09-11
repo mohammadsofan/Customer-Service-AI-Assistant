@@ -41,9 +41,24 @@ export function AIConfigurationPage() {
       setProviders(provs);
       
       if (configuration) {
-        setConfig(configuration);
-        if (configuration.providerId) {
-          const provModels = await aiService.getModels(configuration.providerId);
+        const activeProvId = configuration.activeProviderId || configuration.providerId || '';
+        const activeModId = configuration.activeModelId || configuration.modelId || '';
+        setConfig({
+          ...configuration,
+          providerId: activeProvId,
+          activeProviderId: activeProvId,
+          modelId: activeModId,
+          activeModelId: activeModId
+        });
+        if (configuration.temperature !== undefined) setTemperature(configuration.temperature.toString());
+        if (configuration.maxTokens !== undefined) setMaxTokens(configuration.maxTokens.toString());
+        if (configuration.similarityThreshold !== undefined) setSimilarityThreshold(configuration.similarityThreshold.toString());
+        if (configuration.topK !== undefined) setTopK(configuration.topK.toString());
+        if (configuration.systemPrompt) setSystemPrompt(configuration.systemPrompt);
+        if (configuration.enableAutoFailover !== undefined) setAutoFailover(configuration.enableAutoFailover);
+
+        if (activeProvId) {
+          const provModels = await aiService.getModels(activeProvId);
           setModels(provModels);
         }
       }
@@ -55,7 +70,7 @@ export function AIConfigurationPage() {
   };
 
   const handleProviderChange = async (providerId: string) => {
-    setConfig({ ...config, providerId, modelId: '' });
+    setConfig({ ...config, providerId, activeProviderId: providerId, modelId: '', activeModelId: '' });
     try {
       if (providerId) {
         const provModels = await aiService.getModels(providerId);
@@ -69,9 +84,29 @@ export function AIConfigurationPage() {
   };
 
   const handleSave = async () => {
+    const activeProvId = config.activeProviderId || config.providerId;
+    const activeModId = config.activeModelId || config.modelId;
+    if (!activeProvId) {
+      toast.error('يرجى اختيار المزود النشط');
+      return;
+    }
+    if (!activeModId) {
+      toast.error('يرجى اختيار النموذج النشط');
+      return;
+    }
+
     try {
       setIsSaving(true);
-      await aiService.saveConfiguration(config);
+      await aiService.saveConfiguration({
+        activeProviderId: activeProvId,
+        activeModelId: activeModId,
+        temperature: parseFloat(temperature) || 0.7,
+        maxTokens: parseInt(maxTokens) || 1024,
+        similarityThreshold: parseFloat(similarityThreshold) || 0.75,
+        topK: parseInt(topK) || 5,
+        systemPrompt,
+        enableAutoFailover: autoFailover
+      });
       toast.success('تم حفظ الإعدادات بنجاح');
     } catch {
       toast.error('حدث خطأ أثناء الحفظ');
@@ -109,16 +144,16 @@ export function AIConfigurationPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Select
             label="المزود النشط"
-            value={config.providerId}
+            value={config.activeProviderId || config.providerId || ''}
             onChange={(e) => handleProviderChange(e.target.value)}
             options={[{ value: '', label: 'اختر المزود' }, ...providers.map(p => ({ value: p.id, label: p.name }))]}
           />
           <Select
             label="النموذج النشط"
-            value={config.modelId}
-            onChange={(e) => setConfig({ ...config, modelId: e.target.value })}
+            value={config.activeModelId || config.modelId || ''}
+            onChange={(e) => setConfig({ ...config, modelId: e.target.value, activeModelId: e.target.value })}
             options={[{ value: '', label: 'اختر النموذج' }, ...models.map(m => ({ value: m.id, label: m.name || m.modelName || 'Model' }))]}
-            disabled={!config.providerId}
+            disabled={!(config.activeProviderId || config.providerId)}
           />
         </div>
 

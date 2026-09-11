@@ -4,8 +4,11 @@ export interface AiProvider {
     id: string;
     name: string;
     providerType?: string;
+    baseUrl?: string;
     isActive?: boolean;
     fallbackPriority?: number;
+    maskedApiKey?: string;
+    modelCount?: number;
     models?: AiModel[];
 }
 
@@ -39,6 +42,29 @@ const aiService = {
         const data = response.data;
         return Array.isArray(data) ? data : (data?.items || []);
     },
+
+    createProvider: async (provider: { name: string; providerType: string; apiKey: string; baseUrl?: string; fallbackPriority?: number }): Promise<AiProvider> => {
+        const response = await api.post<AiProvider>('/ai/providers', provider);
+        return response.data;
+    },
+
+    updateProvider: async (id: string, provider: { name: string; apiKey?: string; baseUrl?: string; fallbackPriority?: number }): Promise<AiProvider> => {
+        const response = await api.put<AiProvider>(`/ai/providers/${id}`, provider);
+        return response.data;
+    },
+
+    deleteProvider: async (id: string): Promise<void> => {
+        await api.delete(`/ai/providers/${id}`);
+    },
+
+    activateProvider: async (id: string): Promise<void> => {
+        await api.patch(`/ai/providers/${id}/activate`);
+    },
+
+    deactivateProvider: async (id: string): Promise<void> => {
+        await api.patch(`/ai/providers/${id}/deactivate`);
+    },
+
     getModels: async (providerId?: string): Promise<AiModel[]> => {
         const url = providerId ? `/ai/models?providerId=${providerId}` : '/ai/models';
         const response = await api.get<any>(url);
@@ -49,6 +75,16 @@ const aiService = {
             name: m.name || m.modelName || 'Model'
         }));
     },
+
+    createModel: async (model: { providerId: string; modelName: string }): Promise<AiModel> => {
+        const response = await api.post<AiModel>('/ai/models', model);
+        return response.data;
+    },
+
+    deleteModel: async (id: string): Promise<void> => {
+        await api.delete(`/ai/models/${id}`);
+    },
+
     getConfiguration: async (): Promise<AiConfiguration> => {
         const response = await api.get<AiConfiguration>('/ai/configuration');
         return response.data || {
@@ -60,6 +96,7 @@ const aiService = {
             enableAutoFailover: true
         };
     },
+
     saveConfiguration: async (config: any): Promise<AiConfiguration> => {
         const payload = {
             activeProviderId: config.activeProviderId || config.providerId,
@@ -74,11 +111,13 @@ const aiService = {
         const response = await api.post<AiConfiguration>('/ai/configuration', payload);
         return response.data;
     },
+
     testConnection: async (config?: any): Promise<boolean> => {
         try {
-            const providerId = config?.activeProviderId || config?.providerId;
+            const providerId = config?.activeProviderId || config?.providerId || config?.id;
             if (providerId) {
-                await api.post(`/ai/providers/${providerId}/test`);
+                const res = await api.post<any>(`/ai/providers/${providerId}/test`);
+                return res.data?.success !== false;
             }
             return true;
         } catch {

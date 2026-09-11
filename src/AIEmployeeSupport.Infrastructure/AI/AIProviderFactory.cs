@@ -14,18 +14,18 @@ public class AIProviderFactory : IAIProviderFactory
         _httpClientFactory = httpClientFactory;
     }
 
-    public IAIProviderClient CreateClient(ProviderType providerType, string apiKey)
+    public IAIProviderClient CreateClient(ProviderType providerType, string apiKey, string? baseUrl = null)
     {
         var httpClient = _httpClientFactory.CreateClient("AIProviderClient");
 
         return providerType switch
         {
-            ProviderType.OpenAI => new OpenAIProvider(httpClient, apiKey),
+            ProviderType.OpenAI => new OpenAIProvider(httpClient, apiKey, baseUrl),
             ProviderType.Gemini => new GeminiProvider(httpClient, apiKey),
             ProviderType.Anthropic => new AnthropicProvider(httpClient, apiKey),
-            // Custom or AzureOpenAI can be expanded here. Defaulting to OpenAI style for Azure/Custom placeholder
-            ProviderType.AzureOpenAI => new OpenAIProvider(httpClient, apiKey),
-            ProviderType.Custom => new OpenAIProvider(httpClient, apiKey),
+            // Custom or AzureOpenAI can be expanded here. Defaulting to OpenAI style for Azure/Custom
+            ProviderType.AzureOpenAI => new OpenAIProvider(httpClient, apiKey, baseUrl),
+            ProviderType.Custom => new OpenAIProvider(httpClient, apiKey, baseUrl),
             _ => throw new NotSupportedException($"Provider type {providerType} is not supported.")
         };
     }

@@ -8,6 +8,7 @@ public class AIProvider
     public string Name { get; set; } = string.Empty;
     public ProviderType ProviderType { get; set; }
     public string EncryptedApiKey { get; set; } = string.Empty;
+    public string? BaseUrl { get; set; }
     public bool IsActive { get; set; }
     public int FallbackPriority { get; set; }
     public DateTime CreatedAt { get; set; }

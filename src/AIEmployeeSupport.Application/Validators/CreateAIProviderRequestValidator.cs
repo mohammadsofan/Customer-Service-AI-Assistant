@@ -16,7 +16,7 @@ public class CreateAIProviderRequestValidator : AbstractValidator<CreateAIProvid
 
         RuleFor(x => x.ProviderType)
             .NotEmpty().WithMessage("نوع المزود مطلوب")
-            .Must(t => ValidProviderTypes.Contains(t))
+            .Must(t => ValidProviderTypes.Any(v => string.Equals(v, t, StringComparison.OrdinalIgnoreCase)))
             .WithMessage("نوع المزود غير صالح. القيم المسموحة: OpenAI, Gemini, Anthropic, AzureOpenAI, Custom");
 
         RuleFor(x => x.ApiKey)

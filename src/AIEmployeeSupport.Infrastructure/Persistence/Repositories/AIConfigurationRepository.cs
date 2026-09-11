@@ -21,7 +21,24 @@ public class AIConfigurationRepository : IAIConfigurationRepository
 
     public async Task UpdateAsync(AIConfiguration configuration, CancellationToken cancellationToken = default)
     {
-        _context.AIConfigurations.Update(configuration);
+        var existing = await _context.AIConfigurations.FirstOrDefaultAsync(cancellationToken);
+        if (existing != null)
+        {
+            existing.ActiveProviderId = configuration.ActiveProviderId;
+            existing.ActiveModelId = configuration.ActiveModelId;
+            existing.Temperature = configuration.Temperature;
+            existing.MaxTokens = configuration.MaxTokens;
+            existing.SimilarityThreshold = configuration.SimilarityThreshold;
+            existing.TopK = configuration.TopK;
+            existing.SystemPrompt = configuration.SystemPrompt;
+            existing.EnableAutoFailover = configuration.EnableAutoFailover;
+            existing.UpdatedBy = configuration.UpdatedBy;
+            existing.UpdatedAt = configuration.UpdatedAt;
+        }
+        else
+        {
+            _context.AIConfigurations.Add(configuration);
+        }
         await _context.SaveChangesAsync(cancellationToken);
     }
 }

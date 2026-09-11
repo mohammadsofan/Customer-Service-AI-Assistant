@@ -59,31 +59,40 @@ export function AIModelsPage() {
     setIsModalOpen(true);
   };
 
-  const handleSave = () => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
     if (!name || !providerId) {
       toast.error('يرجى تعبئة جميع الحقول المطلوبة');
       return;
     }
     
-    if (currentModel) {
-      setModels(models.map(m => m.id === currentModel.id ? { ...m, name, providerId } : m));
-      toast.success('تم التحديث بنجاح');
-    } else {
-      const newModel: AiModel = {
-        id: Date.now().toString(),
-        name,
+    try {
+      setIsSaving(true);
+      await aiService.createModel({
         providerId,
-      };
-      setModels([...models, newModel]);
-      toast.success('تمت الإضافة بنجاح');
+        modelName: name.trim()
+      });
+      toast.success(currentModel ? 'تم تحديث النموذج بنجاح' : 'تمت إضافة النموذج بنجاح');
+      setIsModalOpen(false);
+      await loadData();
+    } catch (error: any) {
+      const msg = error.response?.data?.message || 'فشل حفظ النموذج';
+      toast.error(msg);
+    } finally {
+      setIsSaving(false);
     }
-    setIsModalOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('هل أنت متأكد من الحذف؟')) {
-      setModels(models.filter(m => m.id !== id));
-      toast.success('تم الحذف بنجاح');
+  const handleDelete = async (id: string) => {
+    if (window.confirm('هل أنت متأكد من حذف هذا النموذج؟')) {
+      try {
+        await aiService.deleteModel(id);
+        toast.success('تم الحذف بنجاح');
+        await loadData();
+      } catch (error) {
+        toast.error('فشل حذف النموذج');
+      }
     }
   };
 

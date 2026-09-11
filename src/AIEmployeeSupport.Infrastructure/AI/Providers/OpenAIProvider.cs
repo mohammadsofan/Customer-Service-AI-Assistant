@@ -7,9 +7,13 @@ namespace AIEmployeeSupport.Infrastructure.AI.Providers;
 
 public class OpenAIProvider : BaseAIProvider
 {
-    public OpenAIProvider(HttpClient httpClient, string apiKey) : base(httpClient, apiKey)
+    public OpenAIProvider(HttpClient httpClient, string apiKey, string? baseUrl = null) : base(httpClient, apiKey)
     {
-        HttpClient.BaseAddress = new Uri("https://api.openai.com/v1/");
+        var targetBaseUrl = string.IsNullOrWhiteSpace(baseUrl)
+            ? "https://api.openai.com/v1/"
+            : baseUrl.TrimEnd('/') + "/";
+
+        HttpClient.BaseAddress = new Uri(targetBaseUrl);
         HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ApiKey);
     }
 

@@ -48,7 +48,7 @@ public class AIFailoverService : IAIFailoverService
             triedProviders.Add(provider.Id);
 
             var apiKey = _encryptionService.Decrypt(provider.EncryptedApiKey);
-            var client = _providerFactory.CreateClient(provider.ProviderType, apiKey);
+            var client = _providerFactory.CreateClient(provider.ProviderType, apiKey, provider.BaseUrl);
 
             try
             {

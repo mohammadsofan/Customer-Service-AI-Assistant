@@ -45,8 +45,9 @@ public class AIProviderService : IAIProviderService
             Name = request.Name,
             ProviderType = Enum.Parse<ProviderType>(request.ProviderType, true),
             EncryptedApiKey = _encryptionService.Encrypt(request.ApiKey),
+            BaseUrl = request.BaseUrl,
             IsActive = true,
-            FallbackPriority = 10,
+            FallbackPriority = request.FallbackPriority ?? 10,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -65,6 +66,10 @@ public class AIProviderService : IAIProviderService
         if (!string.IsNullOrEmpty(request.ApiKey))
         {
             provider.EncryptedApiKey = _encryptionService.Encrypt(request.ApiKey);
+        }
+        if (request.BaseUrl != null)
+        {
+            provider.BaseUrl = request.BaseUrl;
         }
         provider.FallbackPriority = request.FallbackPriority;
         provider.UpdatedAt = DateTime.UtcNow;
@@ -111,7 +116,7 @@ public class AIProviderService : IAIProviderService
         if (provider == null) throw new InvalidOperationException("Provider not found");
 
         var apiKey = _encryptionService.Decrypt(provider.EncryptedApiKey);
-        var client = _providerFactory.CreateClient(provider.ProviderType, apiKey);
+        var client = _providerFactory.CreateClient(provider.ProviderType, apiKey, provider.BaseUrl);
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         try
@@ -161,6 +166,7 @@ public class AIProviderService : IAIProviderService
             Id = provider.Id,
             Name = provider.Name,
             ProviderType = provider.ProviderType.ToString(),
+            BaseUrl = provider.BaseUrl,
             IsActive = provider.IsActive,
             FallbackPriority = provider.FallbackPriority,
             MaskedApiKey = MaskApiKey(rawApiKey),
