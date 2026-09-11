@@ -12,15 +12,11 @@ builder.Services.Configure<EncryptionSettings>(builder.Configuration.GetSection(
 builder.Services.Configure<CorsSettings>(builder.Configuration.GetSection(CorsSettings.SectionName));
 builder.Services.Configure<EmbeddingSettings>(builder.Configuration.GetSection(EmbeddingSettings.SectionName));
 
-// Database
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 // Application layer (validators, etc.)
 builder.Services.AddApplication();
 
-// Infrastructure layer (repositories, etc.)
-builder.Services.AddInfrastructure();
+// Infrastructure layer (repositories, services, db context, etc.)
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var corsSettings = builder.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>();
 

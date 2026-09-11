@@ -4,14 +4,20 @@ using AIEmployeeSupport.Infrastructure.AI;
 using AIEmployeeSupport.Infrastructure.Persistence;
 using AIEmployeeSupport.Infrastructure.Persistence.Repositories;
 using AIEmployeeSupport.Infrastructure.Security;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AIEmployeeSupport.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        // Database
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+
         // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IKnowledgeScenarioRepository, KnowledgeScenarioRepository>();
