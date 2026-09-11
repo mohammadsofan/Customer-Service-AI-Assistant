@@ -6,7 +6,7 @@ interface AuthContextType {
     token: string | null;
     isAuthenticated: boolean;
     isAdmin: boolean;
-    login: (credentials: LoginRequest) => Promise<void>;
+    login: (credentials: LoginRequest) => Promise<User>;
     logout: () => void;
 }
 
@@ -17,14 +17,25 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(null);
+    const [user, setUser] = useState<User | null>(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser && storedUser !== 'undefined' && storedUser !== 'null') {
+            try { return JSON.parse(storedUser); } catch { return null; }
+        }
+        return null;
+    });
+
+    const [token, setToken] = useState<string | null>(() => {
+        const storedToken = localStorage.getItem('token');
+        return (storedToken && storedToken !== 'undefined' && storedToken !== 'null') ? storedToken : null;
+    });
 
     useEffect(() => {
         const storedToken = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
 
-        if (storedToken && storedUser) {
+        if (storedToken && storedToken !== 'undefined' && storedToken !== 'null' &&
+            storedUser && storedUser !== 'undefined' && storedUser !== 'null') {
             setToken(storedToken);
             try {
                 setUser(JSON.parse(storedUser));
@@ -34,12 +45,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     }, []);
 
-    const login = async (credentials: LoginRequest) => {
+    const login = async (credentials: LoginRequest): Promise<User> => {
         const data = await authService.login(credentials);
-        setToken(data.token);
+        const authToken = data.accessToken || data.token;
+        setToken(authToken);
         setUser(data.user);
-        localStorage.setItem('token', data.token);
+        localStorage.setItem('token', authToken);
         localStorage.setItem('user', JSON.stringify(data.user));
+        return data.user;
     };
 
     const logout = () => {
@@ -50,7 +63,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     const isAuthenticated = !!token;
-    const isAdmin = user?.isAdmin || user?.role === 'Admin' || false;
+    const roleLower = (user?.role || '').toLowerCase();
+    const isAdmin = user?.isAdmin === true || roleLower === 'admin' || roleLower === 'administrator';
 
     return (
         <AuthContext.Provider value={{ user, token, isAuthenticated, isAdmin, login, logout }}>

@@ -6,11 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 using AIEmployeeSupport.Application.DTOs.Knowledge;
 using AIEmployeeSupport.Application.Interfaces.Services;
 
-using AIEmployeeSupport.Application.Interfaces.Services;
 namespace AIEmployeeSupport.API.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/[controller]")]
+[Route("api/knowledge/categories")]
 [Authorize(Policy = "AdminOnly")]
 public class CategoriesController : ControllerBase
 {

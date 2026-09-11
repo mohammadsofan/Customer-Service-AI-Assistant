@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
 using AIEmployeeSupport.Application.Interfaces.Services;
+
 namespace AIEmployeeSupport.API.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/[controller]")]
+[Route("api/analytics")]
 [Authorize(Policy = "AdminOnly")]
 public class AnalyticsController : ControllerBase
 {

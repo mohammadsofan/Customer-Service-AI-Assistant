@@ -9,11 +9,12 @@ using AIEmployeeSupport.Application.DTOs.Knowledge;
 using AIEmployeeSupport.Application.Interfaces.Services;
 using AIEmployeeSupport.Domain.Enums;
 
-using AIEmployeeSupport.Application.Interfaces.Services;
 namespace AIEmployeeSupport.API.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/[controller]")]
+[Route("api/admin/scenarios")]
+[Route("api/knowledge/scenarios")]
 [Authorize(Policy = "AdminOnly")]
 public class KnowledgeController : ControllerBase
 {

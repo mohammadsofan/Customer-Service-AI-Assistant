@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
 using AIEmployeeSupport.Application.Interfaces.Services;
+
 namespace AIEmployeeSupport.API.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/[controller]")]
+[Route("api/ai/providers")]
 [Authorize(Policy = "AdminOnly")]
 public class AIProvidersController : ControllerBase
 {
@@ -23,14 +24,11 @@ public class AIProvidersController : ControllerBase
     public IActionResult Create() => Ok();
 
     [HttpPut("{id}")]
-    public IActionResult Update(int id) => Ok();
+    public IActionResult Update(Guid id) => Ok();
 
     [HttpDelete("{id}")]
-    public IActionResult Delete(int id) => Ok();
+    public IActionResult Delete(Guid id) => Ok();
 
     [HttpPost("{id}/test")]
-    public IActionResult Test(int id) => Ok();
-
-    [HttpPatch("{id}/activate")]
-    public IActionResult Activate(int id) => Ok();
+    public IActionResult TestConnection(Guid id) => Ok();
 }

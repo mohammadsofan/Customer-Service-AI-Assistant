@@ -41,7 +41,7 @@ export function EmployeesPage() {
   const handleOpenModal = (employee?: Employee) => {
     if (employee) {
       setCurrentEmployee(employee);
-      setUsername(employee.username);
+      setUsername(employee.username || '');
       setEmail(employee.email);
       setRole(employee.role);
       setDepartment(employee.department || '');

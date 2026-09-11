@@ -25,30 +25,33 @@ export const LoginPage: React.FC = () => {
 
     try {
       setIsLoading(true);
-      await login({ email, password });
-      // Wait for state to update, but we can also just use the returned user or rely on the effect in App.tsx
-      // Actually, since login() updates the context, the ProtectedRoute might pick it up.
-      // But let's do a programmatic redirect based on role.
-      // We will parse the JWT or wait for the user state.
-      // Assuming `login` returns the user or we can check role
-      // For simplicity, let's just let the AuthContext update and redirect. Wait, if `login` resolves, we should redirect.
+      const loggedInUser = await login({ email, password });
+      const roleLower = (loggedInUser?.role || '').toLowerCase();
+      const isAdmin = loggedInUser?.isAdmin || roleLower === 'admin' || roleLower === 'administrator';
+      if (isAdmin) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/support', { replace: true });
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.');
       setIsLoading(false);
     }
   };
 
-  // We should listen to isAdmin / isAuthenticated changes to redirect
-  const { isAuthenticated, isAdmin: isUserAdmin } = useAuth();
+  // Listen to isAuthenticated changes for already logged in sessions
+  const { isAuthenticated, isAdmin: isUserAdmin, user } = useAuth();
   React.useEffect(() => {
     if (isAuthenticated) {
-      if (isUserAdmin) {
+      const roleLower = (user?.role || '').toLowerCase();
+      const isAdmin = isUserAdmin || roleLower === 'admin' || roleLower === 'administrator';
+      if (isAdmin) {
         navigate('/admin', { replace: true });
       } else {
         navigate('/support', { replace: true });
       }
     }
-  }, [isAuthenticated, isUserAdmin, navigate]);
+  }, [isAuthenticated, isUserAdmin, user, navigate]);
 
   return (
     <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-xl shadow-lg border border-gray-100" dir="rtl">
