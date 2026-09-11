@@ -23,11 +23,16 @@ import {
   AuditLogPage
 } from './pages';
 
+import { AuthProvider } from './contexts/AuthContext';
+import { Toaster } from 'react-hot-toast';
+
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public Routes */}
+    <AuthProvider>
+      <BrowserRouter>
+        <Toaster position="top-center" />
+        <Routes>
+          {/* Public Routes */}
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
         </Route>
@@ -66,6 +71,7 @@ function App() {
         <Route path="*" element={<Navigate to="/support" replace />} />
       </Routes>
     </BrowserRouter>
+    </AuthProvider>
   );
 }
 
