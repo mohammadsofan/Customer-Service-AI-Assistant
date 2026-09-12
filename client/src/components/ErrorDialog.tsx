@@ -1,4 +1,4 @@
-﻿import { Button } from './Button';
+import { Button } from './Button';
 import { AlertCircle, X } from 'lucide-react';
 
 export interface ErrorDialogProps {
@@ -21,11 +21,18 @@ export function ErrorDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 transition-all duration-200" dir="rtl">
+    <div 
+      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 transition-all duration-200" 
+      dir="rtl"
+      data-testid="error-modal-backdrop"
+    >
       <div 
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-red-100 transform transition-all animate-in fade-in zoom-in-95 duration-150"
+        className="modal w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-red-100 transform transition-all animate-in fade-in zoom-in-95 duration-150"
         role="dialog"
         aria-modal="true"
+        aria-labelledby="error-dialog-title"
+        data-testid="error-modal"
+        data-test="error-modal"
       >
         <div className="flex items-start justify-between pb-3 border-b border-gray-100">
           <div className="flex items-center gap-3">

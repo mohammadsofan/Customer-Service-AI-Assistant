@@ -112,7 +112,16 @@ export function EditScenarioPage() {
       showError('الرجاء استكمال جميع الحقول الإلزامية قبل حفظ السيناريو.', missingFields, 'تنبيه: بيانات غير مكتملة');
       return;
     }
-    if (status === 'Active' && steps.length === 0) {
+    const isScenarioActive = (val?: string) => {
+      if (!val) return true;
+      const s = val.trim().toLowerCase();
+      return s === 'active' || s === 'نشط' || s === '1' || (s !== 'draft' && s !== 'inactive' && s !== 'archived' && s !== 'مسودة' && s !== 'غير نشط');
+    };
+
+    const isActive = isScenarioActive(status);
+    const validSteps = steps.filter((s) => typeof s === 'string' && s.trim().length > 0);
+
+    if (isActive && validSteps.length === 0) {
       showError('تفعيل السيناريو يتطلب إضافة خطوة حل واحدة على الأقل لتمكين الذكاء الاصطناعي من الإجابة.', ['أضف خطوات حل مرتبة أو اضبط الحالة إلى "مسودة"'], 'تنبيه: خطوات الحل مطلوبة');
       return;
     }
@@ -124,11 +133,11 @@ export function EditScenarioPage() {
         description: description.trim(),
         categoryId,
         keywords,
-        resolutionSteps: steps,
+        resolutionSteps: validSteps,
       });
 
       if (status !== initialStatus) {
-        await knowledgeService.updateStatus(id, status);
+        await knowledgeService.updateStatus(id, isActive ? 'Active' : status);
       }
 
       toast.success('تم تحديث السيناريو بنجاح');

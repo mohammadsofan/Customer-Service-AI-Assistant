@@ -47,10 +47,12 @@ public class ExceptionHandlingMiddleware
                 details = validationEx.Errors.Select(e => new { e.PropertyName, e.ErrorMessage });
                 break;
 
-            case UnauthorizedAccessException:
+            case UnauthorizedAccessException unauthEx:
                 statusCode = HttpStatusCode.Unauthorized;
                 errorCode = "UNAUTHORIZED";
-                message = "You are not authorized to access this resource.";
+                message = !string.IsNullOrWhiteSpace(unauthEx.Message) && unauthEx.Message != "Attempted to perform an unauthorized operation."
+                    ? unauthEx.Message
+                    : "بيانات الاعتماد غير صحيحة. يرجى التأكد من البريد وكلمة المرور.";
                 break;
 
             case ForbiddenException forbiddenEx:

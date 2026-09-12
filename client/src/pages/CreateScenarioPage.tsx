@@ -87,7 +87,16 @@ export function CreateScenarioPage() {
       return;
     }
 
-    if (status === 'Active' && steps.length === 0) {
+    const isScenarioActive = (val?: string) => {
+      if (!val) return true;
+      const s = val.trim().toLowerCase();
+      return s === 'active' || s === 'نشط' || s === '1' || (s !== 'draft' && s !== 'inactive' && s !== 'archived' && s !== 'مسودة' && s !== 'غير نشط');
+    };
+
+    const isActive = isScenarioActive(status);
+    const validSteps = steps.filter((s) => typeof s === 'string' && s.trim().length > 0);
+
+    if (isActive && validSteps.length === 0) {
       showError('تفعيل السيناريو يتطلب إضافة خطوة حل واحدة على الأقل لتمكين الذكاء الاصطناعي من الإجابة.', ['أضف خطوات حل مرتبة أو اضبط الحالة إلى "مسودة"'], 'تنبيه: خطوات الحل مطلوبة');
       return;
     }
@@ -99,8 +108,8 @@ export function CreateScenarioPage() {
         description: description.trim(),
         categoryId,
         keywords,
-        resolutionSteps: steps,
-        status,
+        resolutionSteps: validSteps,
+        status: isActive ? 'Active' : status,
       });
 
       toast.success('تمت إضافة السيناريو بنجاح');
@@ -150,6 +159,9 @@ export function CreateScenarioPage() {
       <form onSubmit={handleSave} className="space-y-6 bg-white p-6 rounded shadow">
         <Input
           label="اسم السيناريو"
+          name="name"
+          id="scenario-name"
+          data-testid="scenario-name-input"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="مثال: مشكلة عدم وصول رمز التحقق OTP"
@@ -158,6 +170,9 @@ export function CreateScenarioPage() {
 
         <Textarea
           label="الوصف"
+          name="description"
+          id="scenario-description"
+          data-testid="scenario-description-input"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="اكتب وصفاً مفصلاً للمشكلة وسياق حدوثها"
@@ -167,6 +182,9 @@ export function CreateScenarioPage() {
 
         <Select
           label="التصنيف"
+          name="categoryId"
+          id="scenario-category"
+          data-testid="scenario-category-select"
           options={[
             { value: '', label: 'اختر تصنيفاً' },
             ...categories.map((c) => ({ value: c.id.toString(), label: c.name }))
@@ -180,6 +198,8 @@ export function CreateScenarioPage() {
           <label className="block text-sm font-medium text-gray-700 mb-1">الكلمات المفتاحية</label>
           <div className="flex gap-2 mb-2">
             <Input
+              name="keywordInput"
+              data-testid="keyword-input"
               value={keywordInput}
               onChange={(e) => setKeywordInput(e.target.value)}
               onKeyDown={(e) => {
@@ -190,7 +210,7 @@ export function CreateScenarioPage() {
               }}
               placeholder="اكتب كلمة مفتاحية واضغط إضافة"
             />
-            <Button type="button" onClick={handleAddKeyword} className="mt-1">
+            <Button type="button" onClick={handleAddKeyword} className="mt-1" data-testid="add-keyword-btn">
               <Plus className="w-4 h-4 ml-1" />
               إضافة
             </Button>
@@ -211,6 +231,8 @@ export function CreateScenarioPage() {
           <label className="block text-sm font-medium text-gray-700 mb-1">خطوات الحل (المرتبة)</label>
           <div className="flex gap-2 mb-2">
             <Input
+              name="stepInput"
+              data-testid="step-input"
               value={stepInput}
               onChange={(e) => setStepInput(e.target.value)}
               onKeyDown={(e) => {
@@ -221,7 +243,7 @@ export function CreateScenarioPage() {
               }}
               placeholder="اكتب خطوة من خطوات الحل واضغط إضافة"
             />
-            <Button type="button" onClick={handleAddStep} className="mt-1">
+            <Button type="button" onClick={handleAddStep} className="mt-1" data-testid="add-step-btn">
               <Plus className="w-4 h-4 ml-1" />
               إضافة
             </Button>
@@ -244,6 +266,9 @@ export function CreateScenarioPage() {
 
         <Select
           label="الحالة"
+          name="status"
+          id="scenario-status"
+          data-testid="scenario-status-select"
           options={[
             { value: 'Active', label: 'نشط' },
             { value: 'Draft', label: 'مسودة' },
@@ -257,7 +282,7 @@ export function CreateScenarioPage() {
           <Button type="button" variant="outline" onClick={() => navigate('/admin/knowledge')}>
             إلغاء
           </Button>
-          <Button type="submit" isLoading={isSaving}>
+          <Button type="submit" isLoading={isSaving} data-testid="submit-scenario-btn">
             حفظ السيناريو
           </Button>
         </div>

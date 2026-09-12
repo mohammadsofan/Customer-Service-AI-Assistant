@@ -55,4 +55,33 @@ describe('LoginPage', () => {
       expect(document.querySelector('.bg-red-50')).toBeInTheDocument();
     });
   });
+
+  it('shows Arabic alert for invalid credentials (AUTH-003)', async () => {
+    mockLogin.mockRejectedValueOnce({
+      response: {
+        status: 401,
+        data: { message: 'You are not authorized to access this resource.' }
+      }
+    });
+
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('أدخل بريدك الإلكتروني'), {
+      target: { value: 'test@example.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('أدخل كلمة المرور'), {
+      target: { value: 'WrongPassword123' },
+    });
+
+    const submitButton = screen.getByRole('button', { name: /تسجيل الدخول/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('بيانات الاعتماد غير صحيحة. يرجى التأكد من البريد وكلمة المرور.')).toBeInTheDocument();
+    });
+  });
 });

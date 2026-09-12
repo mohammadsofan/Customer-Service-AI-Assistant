@@ -5,6 +5,8 @@ using AIEmployeeSupport.Application.Interfaces;
 using AIEmployeeSupport.Application.Interfaces.Services;
 using AIEmployeeSupport.Domain.Entities;
 using AIEmployeeSupport.Domain.Enums;
+using FluentValidation;
+using FluentValidation.Results;
 
 namespace AIEmployeeSupport.Application.Services;
 
@@ -90,13 +92,38 @@ public class KnowledgeService : IKnowledgeService
         var category = await _categoryRepository.GetByIdAsync(request.CategoryId, cancellationToken);
         if (category == null) throw new Exception("Category not found");
 
+        var status = ScenarioStatus.Draft;
+        if (!string.IsNullOrEmpty(request.Status))
+        {
+            if (Enum.TryParse<ScenarioStatus>(request.Status, ignoreCase: true, out var parsedStatus))
+            {
+                status = parsedStatus;
+            }
+            else if (request.Status == "نشط" || request.Status == "1")
+            {
+                status = ScenarioStatus.Active;
+            }
+        }
+        else
+        {
+            status = ScenarioStatus.Active;
+        }
+
+        if (status == ScenarioStatus.Active && (request.ResolutionSteps == null || !request.ResolutionSteps.Any(s => !string.IsNullOrWhiteSpace(s))))
+        {
+            throw new ValidationException(new[]
+            {
+                new ValidationFailure("ResolutionSteps", "يجب إضافة خطوة حل واحدة على الأقل عند تفعيل السيناريو")
+            });
+        }
+
         var scenario = new KnowledgeScenario
         {
             Id = Guid.NewGuid(),
             Name = request.Name,
             Description = request.Description,
             CategoryId = request.CategoryId,
-            Status = Enum.TryParse<ScenarioStatus>(request.Status, out var status) ? status : ScenarioStatus.Draft,
+            Status = status,
             CreatedBy = userId,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -169,6 +196,14 @@ public class KnowledgeService : IKnowledgeService
     {
         var scenario = await _scenarioRepository.GetByIdAsync(scenarioId, cancellationToken);
         if (scenario == null) throw new Exception("Scenario not found");
+
+        if (scenario.Status == ScenarioStatus.Active && (request.ResolutionSteps == null || !request.ResolutionSteps.Any(s => !string.IsNullOrWhiteSpace(s))))
+        {
+            throw new ValidationException(new[]
+            {
+                new ValidationFailure("ResolutionSteps", "يجب إضافة خطوة حل واحدة على الأقل عند تفعيل السيناريو")
+            });
+        }
 
         scenario.Name = request.Name;
         scenario.Description = request.Description;

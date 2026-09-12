@@ -34,7 +34,18 @@ export const LoginPage: React.FC = () => {
         navigate('/support', { replace: true });
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'بيانات الاعتماد غير صحيحة. يرجى التأكد من البريد وكلمة المرور.');
+      if (
+        err.response?.status === 401 ||
+        err.response?.status === 403 ||
+        err.response?.data?.errorCode === 'UNAUTHORIZED' ||
+        err.response?.data?.message?.toLowerCase().includes('authorized') ||
+        err.response?.data?.message?.toLowerCase().includes('credential') ||
+        err.response?.data?.message?.includes('بيانات الاعتماد')
+      ) {
+        setError('بيانات الاعتماد غير صحيحة. يرجى التأكد من البريد وكلمة المرور.');
+      } else {
+        setError(err.response?.data?.message || 'بيانات الاعتماد غير صحيحة. يرجى التأكد من البريد وكلمة المرور.');
+      }
       setIsLoading(false);
     }
   };

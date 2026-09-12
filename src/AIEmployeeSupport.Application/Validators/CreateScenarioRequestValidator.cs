@@ -21,14 +21,23 @@ public class CreateScenarioRequestValidator : AbstractValidator<CreateScenarioRe
         RuleFor(x => x.ResolutionSteps)
             .Must((request, steps) =>
             {
-                if (request.Status == "Active")
-                    return steps != null && steps.Count > 0;
+                var isActive = string.IsNullOrEmpty(request.Status) ||
+                               string.Equals(request.Status, "Active", StringComparison.OrdinalIgnoreCase) ||
+                               request.Status == "1" ||
+                               request.Status == "نشط";
+                if (isActive)
+                    return steps != null && steps.Any(s => !string.IsNullOrWhiteSpace(s));
                 return true;
             })
             .WithMessage("يجب إضافة خطوة حل واحدة على الأقل عند تفعيل السيناريو");
 
         RuleFor(x => x.Status)
-            .Must(s => s is "Draft" or "Active" or "Inactive" or "Archived")
+            .Must(s => string.IsNullOrEmpty(s) ||
+                       s.Equals("Draft", StringComparison.OrdinalIgnoreCase) ||
+                       s.Equals("Active", StringComparison.OrdinalIgnoreCase) ||
+                       s.Equals("Inactive", StringComparison.OrdinalIgnoreCase) ||
+                       s.Equals("Archived", StringComparison.OrdinalIgnoreCase) ||
+                       s == "نشط" || s == "مسودة" || s == "غير نشط")
             .WithMessage("حالة السيناريو غير صالحة");
     }
 }

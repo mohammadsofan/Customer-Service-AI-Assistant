@@ -33,13 +33,13 @@ public class AuthService : IAuthService
         var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
         if (user == null || !user.IsActive)
         {
-            throw new UnauthorizedAccessException("Invalid credentials.");
+            throw new UnauthorizedAccessException("بيانات الاعتماد غير صحيحة. يرجى التأكد من البريد وكلمة المرور.");
         }
 
         var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
         if (result == PasswordVerificationResult.Failed)
         {
-            throw new UnauthorizedAccessException("Invalid credentials.");
+            throw new UnauthorizedAccessException("بيانات الاعتماد غير صحيحة. يرجى التأكد من البريد وكلمة المرور.");
         }
 
         var accessToken = GenerateJwtToken(user, _jwtSettings.ExpirationMinutes);
