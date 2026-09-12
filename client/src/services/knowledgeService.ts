@@ -15,25 +15,51 @@ export interface Keyword {
     scenarioCount?: number;
 }
 
+export interface ResolutionStep {
+    id?: string;
+    stepOrder: number;
+    stepText: string;
+}
+
 export interface Scenario {
     id: string;
     name: string;
     title?: string;
     description?: string;
     content?: string;
-    categoryId: string;
+    categoryId?: string;
     categoryName?: string;
-    status?: string;
+    status: string;
     keywords?: string[];
     steps?: string[];
-    resolutionSteps?: Array<{ id: string; stepOrder: number; stepText: string }>;
+    resolutionSteps?: ResolutionStep[];
+    stepCount?: number;
+    keywordCount?: number;
     createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface CreateScenarioDto {
+    name: string;
+    description: string;
+    categoryId: string;
+    keywords: string[];
+    resolutionSteps: string[];
+    status?: string;
+}
+
+export interface UpdateScenarioDto {
+    name: string;
+    description: string;
+    categoryId: string;
+    keywords: string[];
+    resolutionSteps: string[];
 }
 
 const knowledgeService = {
     // Scenarios
     getScenarios: async (): Promise<Scenario[]> => {
-        const response = await api.get<any>('/knowledge/scenarios');
+        const response = await api.get<any>('/knowledge/scenarios?pageSize=100');
         const data = response.data;
         return Array.isArray(data) ? data : (data?.items || []);
     },
@@ -41,13 +67,18 @@ const knowledgeService = {
         const response = await api.get<Scenario>(`/knowledge/scenarios/${id}`);
         return response.data;
     },
-    createScenario: async (scenario: any): Promise<Scenario> => {
+    createScenario: async (scenario: CreateScenarioDto): Promise<Scenario> => {
         const response = await api.post<Scenario>('/knowledge/scenarios', scenario);
         return response.data;
     },
-    updateScenario: async (id: string | number, scenario: any): Promise<Scenario> => {
+    updateScenario: async (id: string | number, scenario: UpdateScenarioDto): Promise<Scenario> => {
         const response = await api.put<Scenario>(`/knowledge/scenarios/${id}`, scenario);
         return response.data;
+    },
+    updateStatus: async (id: string | number, status: string): Promise<void> => {
+        await api.patch(`/knowledge/scenarios/${id}/status`, JSON.stringify(status), {
+            headers: { 'Content-Type': 'application/json' }
+        });
     },
     deleteScenario: async (id: string | number): Promise<void> => {
         await api.delete(`/knowledge/scenarios/${id}`);

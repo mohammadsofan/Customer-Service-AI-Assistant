@@ -4,13 +4,11 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Select } from '../components/Select';
 import { Textarea } from '../components/Textarea';
+import { Alert } from '../components/Alert';
 import { LoadingState } from '../components/LoadingState';
 import knowledgeService, { Category, Scenario } from '../services/knowledgeService';
 import { Plus, Trash2 } from 'lucide-react';
-
-interface ExtendedScenario extends Scenario {
-  status?: string;
-}
+import toast from 'react-hot-toast';
 
 export function EditScenarioPage() {
   const navigate = useNavigate();
@@ -18,48 +16,47 @@ export function EditScenarioPage() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   
-  const [title, setTitle] = useState('');
+  const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordInput, setKeywordInput] = useState('');
   const [steps, setSteps] = useState<string[]>([]);
   const [stepInput, setStepInput] = useState('');
-  const [status, setStatus] = useState('active');
+  const [status, setStatus] = useState('Active');
+  const [initialStatus, setInitialStatus] = useState('Active');
   const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
     Promise.all([
-      knowledgeService.getScenario(Number(id)),
+      knowledgeService.getScenario(id),
       knowledgeService.getCategories()
-    ]).then(([scenarioData, cats]) => {
+    ]).then(([scenario, cats]) => {
       setCategories(cats);
-      const scenario = scenarioData as ExtendedScenario;
-      setTitle(scenario.title || '');
+      setName(scenario.name || '');
+      setDescription(scenario.description || '');
       setCategoryId(scenario.categoryId?.toString() || '');
       setKeywords(scenario.keywords || []);
-      setStatus(scenario.status || 'active');
+      const scenarioStatus = scenario.status || 'Active';
+      setStatus(scenarioStatus);
+      setInitialStatus(scenarioStatus);
       
-      try {
-        if (scenario.content) {
-          const parsed = JSON.parse(scenario.content);
-          setDescription(parsed.description || '');
-          setSteps(parsed.steps || []);
-        }
-      } catch {
-        setDescription(scenario.content || '');
-      }
+      const loadedSteps = scenario.resolutionSteps?.map((s) => s.stepText) || [];
+      setSteps(loadedSteps);
       setLoading(false);
     }).catch((err) => {
       console.error(err);
+      setErrorMessage('فشل في تحميل بيانات السيناريو.');
       setLoading(false);
     });
   }, [id]);
 
   const handleAddKeyword = () => {
-    if (keywordInput.trim() && !keywords.includes(keywordInput.trim())) {
-      setKeywords([...keywords, keywordInput.trim()]);
+    const trimmed = keywordInput.trim();
+    if (trimmed && !keywords.includes(trimmed)) {
+      setKeywords([...keywords, trimmed]);
       setKeywordInput('');
     }
   };
@@ -69,8 +66,9 @@ export function EditScenarioPage() {
   };
 
   const handleAddStep = () => {
-    if (stepInput.trim()) {
-      setSteps([...steps, stepInput.trim()]);
+    const trimmed = stepInput.trim();
+    if (trimmed) {
+      setSteps([...steps, trimmed]);
       setStepInput('');
     }
   };
@@ -81,30 +79,47 @@ export function EditScenarioPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !description || !categoryId) {
-      alert('الرجاء ملء الحقول المطلوبة (الاسم، الوصف، التصنيف)');
+    if (!id) return;
+    setErrorMessage(null);
+
+    if (!name.trim() || !description.trim() || !categoryId) {
+      setErrorMessage('الرجاء ملء الحقول المطلوبة (اسم السيناريو، الوصف، التصنيف)');
       return;
     }
-    if (status === 'active' && steps.length === 0) {
-      alert('الحالة النشطة تتطلب خطوة واحدة على الأقل');
+    if (status === 'Active' && steps.length === 0) {
+      setErrorMessage('تفعيل السيناريو يتطلب إضافة خطوة حل واحدة على الأقل');
       return;
     }
 
     try {
       setIsSaving(true);
-      const content = JSON.stringify({ description, steps });
-      await knowledgeService.updateScenario(Number(id), {
-        title,
-        content,
-        categoryId: Number(categoryId),
+      await knowledgeService.updateScenario(id, {
+        name: name.trim(),
+        description: description.trim(),
+        categoryId,
         keywords,
-        // @ts-ignore
-        status,
+        resolutionSteps: steps,
       });
-      navigate('/admin/knowledge/scenarios');
-    } catch (err) {
-      console.error(err);
-      alert('حدث خطأ أثناء الحفظ.');
+
+      if (status !== initialStatus) {
+        await knowledgeService.updateStatus(id, status);
+      }
+
+      toast.success('تم تحديث السيناريو بنجاح');
+      navigate('/admin/knowledge');
+    } catch (err: any) {
+      console.error('Error updating scenario:', err);
+      let msg = 'حدث خطأ أثناء الحفظ.';
+      if (err.response?.data?.errors) {
+        msg = Object.values(err.response.data.errors).flat().join(' | ');
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err.response?.data?.title) {
+        msg = err.response.data.title;
+      } else if (err.message) {
+        msg = err.message;
+      }
+      setErrorMessage(msg);
     } finally {
       setIsSaving(false);
     }
@@ -114,20 +129,32 @@ export function EditScenarioPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6" dir="rtl">
-      <h1 className="text-2xl font-bold">تعديل سيناريو</h1>
+      <h1 className="text-2xl font-bold">تعديل السيناريو</h1>
+
+      {errorMessage && (
+        <Alert
+          type="error"
+          title="خطأ"
+          message={errorMessage}
+        />
+      )}
+
       <form onSubmit={handleSave} className="space-y-6 bg-white p-6 rounded shadow">
         <Input
-          label="الاسم (العنوان)"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          label="اسم السيناريو"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           required
         />
+
         <Textarea
           label="الوصف"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          rows={4}
           required
         />
+
         <Select
           label="التصنيف"
           options={[
@@ -145,58 +172,83 @@ export function EditScenarioPage() {
             <Input
               value={keywordInput}
               onChange={(e) => setKeywordInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddKeyword())}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddKeyword();
+                }
+              }}
               placeholder="اكتب كلمة مفتاحية واضغط إضافة"
             />
-            <Button type="button" onClick={handleAddKeyword} className="mt-1">إضافة</Button>
+            <Button type="button" onClick={handleAddKeyword} className="mt-1">
+              <Plus className="w-4 h-4 ml-1" />
+              إضافة
+            </Button>
           </div>
           <div className="flex flex-wrap gap-2">
             {keywords.map((kw) => (
-              <span key={kw} className="bg-blue-100 text-blue-800 px-2 py-1 rounded flex items-center gap-1">
+              <span key={kw} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
                 {kw}
-                <button type="button" onClick={() => handleRemoveKeyword(kw)} className="text-red-500"><Trash2 className="w-3 h-3" /></button>
+                <button type="button" onClick={() => handleRemoveKeyword(kw)} className="text-red-500 hover:text-red-700 mr-1">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </span>
             ))}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">خطوات الحل</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">خطوات الحل (المرتبة)</label>
           <div className="flex gap-2 mb-2">
             <Input
               value={stepInput}
               onChange={(e) => setStepInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddStep())}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddStep();
+                }
+              }}
               placeholder="اكتب خطوة واضغط إضافة"
             />
-            <Button type="button" onClick={handleAddStep} className="mt-1">إضافة</Button>
+            <Button type="button" onClick={handleAddStep} className="mt-1">
+              <Plus className="w-4 h-4 ml-1" />
+              إضافة
+            </Button>
           </div>
-          <ol className="list-decimal list-inside space-y-2">
-            {steps.map((step, index) => (
-              <li key={index} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                <span>{step}</span>
-                <button type="button" onClick={() => handleRemoveStep(index)} className="text-red-500"><Trash2 className="w-4 h-4" /></button>
-              </li>
-            ))}
-          </ol>
+          {steps.length === 0 ? (
+            <p className="text-xs text-gray-400">لم يتم إضافة خطوات بعد.</p>
+          ) : (
+            <ol className="list-decimal list-inside space-y-2">
+              {steps.map((step, index) => (
+                <li key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded border">
+                  <span>{step}</span>
+                  <button type="button" onClick={() => handleRemoveStep(index)} className="text-red-500 hover:text-red-700">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
 
         <Select
           label="الحالة"
           options={[
-            { value: 'active', label: 'نشط' },
-            { value: 'inactive', label: 'غير نشط' }
+            { value: 'Active', label: 'نشط' },
+            { value: 'Draft', label: 'مسودة' },
+            { value: 'Inactive', label: 'غير نشط' }
           ]}
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         />
 
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={() => navigate('/admin/knowledge/scenarios')}>
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={() => navigate('/admin/knowledge')}>
             إلغاء
           </Button>
           <Button type="submit" isLoading={isSaving}>
-            حفظ
+            حفظ التعديلات
           </Button>
         </div>
       </form>

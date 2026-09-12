@@ -4,30 +4,34 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Select } from '../components/Select';
 import { Textarea } from '../components/Textarea';
+import { Alert } from '../components/Alert';
 import knowledgeService, { Category } from '../services/knowledgeService';
 import { Plus, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export function CreateScenarioPage() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   
-  const [title, setTitle] = useState('');
+  const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordInput, setKeywordInput] = useState('');
   const [steps, setSteps] = useState<string[]>([]);
   const [stepInput, setStepInput] = useState('');
-  const [status, setStatus] = useState('active');
+  const [status, setStatus] = useState('Active');
   const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     knowledgeService.getCategories().then(setCategories).catch(console.error);
   }, []);
 
   const handleAddKeyword = () => {
-    if (keywordInput.trim() && !keywords.includes(keywordInput.trim())) {
-      setKeywords([...keywords, keywordInput.trim()]);
+    const trimmed = keywordInput.trim();
+    if (trimmed && !keywords.includes(trimmed)) {
+      setKeywords([...keywords, trimmed]);
       setKeywordInput('');
     }
   };
@@ -37,8 +41,9 @@ export function CreateScenarioPage() {
   };
 
   const handleAddStep = () => {
-    if (stepInput.trim()) {
-      setSteps([...steps, stepInput.trim()]);
+    const trimmed = stepInput.trim();
+    if (trimmed) {
+      setSteps([...steps, trimmed]);
       setStepInput('');
     }
   };
@@ -49,30 +54,44 @@ export function CreateScenarioPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !description || !categoryId) {
-      alert('الرجاء ملء الحقول المطلوبة (الاسم، الوصف، التصنيف)');
+    setErrorMessage(null);
+
+    if (!name.trim() || !description.trim() || !categoryId) {
+      setErrorMessage('الرجاء ملء الحقول المطلوبة (اسم السيناريو، الوصف، التصنيف)');
       return;
     }
-    if (status === 'active' && steps.length === 0) {
-      alert('الحالة النشطة تتطلب خطوة واحدة على الأقل');
+
+    if (status === 'Active' && steps.length === 0) {
+      setErrorMessage('تفعيل السيناريو يتطلب إضافة خطوة حل واحدة على الأقل');
       return;
     }
 
     try {
       setIsSaving(true);
-      const content = JSON.stringify({ description, steps });
       await knowledgeService.createScenario({
-        title,
-        content,
-        categoryId: Number(categoryId),
+        name: name.trim(),
+        description: description.trim(),
+        categoryId,
         keywords,
-        // @ts-ignore
+        resolutionSteps: steps,
         status,
       });
-      navigate('/admin/knowledge/scenarios');
-    } catch (err) {
-      console.error(err);
-      alert('حدث خطأ أثناء الحفظ.');
+
+      toast.success('تمت إضافة السيناريو بنجاح');
+      navigate('/admin/knowledge');
+    } catch (err: any) {
+      console.error('Error creating scenario:', err);
+      let msg = 'حدث خطأ أثناء الحفظ.';
+      if (err.response?.data?.errors) {
+        msg = Object.values(err.response.data.errors).flat().join(' | ');
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err.response?.data?.title) {
+        msg = err.response.data.title;
+      } else if (err.message) {
+        msg = err.message;
+      }
+      setErrorMessage(msg);
     } finally {
       setIsSaving(false);
     }
@@ -80,20 +99,34 @@ export function CreateScenarioPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6" dir="rtl">
-      <h1 className="text-2xl font-bold">إضافة سيناريو</h1>
+      <h1 className="text-2xl font-bold">إضافة سيناريو جديد</h1>
+
+      {errorMessage && (
+        <Alert
+          type="error"
+          title="خطأ في الحفظ"
+          message={errorMessage}
+        />
+      )}
+
       <form onSubmit={handleSave} className="space-y-6 bg-white p-6 rounded shadow">
         <Input
-          label="الاسم (العنوان)"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          label="اسم السيناريو"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="مثال: مشكلة عدم وصول رمز التحقق OTP"
           required
         />
+
         <Textarea
           label="الوصف"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          placeholder="اكتب وصفاً مفصلاً للمشكلة وسياق حدوثها"
+          rows={4}
           required
         />
+
         <Select
           label="التصنيف"
           options={[
@@ -111,58 +144,83 @@ export function CreateScenarioPage() {
             <Input
               value={keywordInput}
               onChange={(e) => setKeywordInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddKeyword())}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddKeyword();
+                }
+              }}
               placeholder="اكتب كلمة مفتاحية واضغط إضافة"
             />
-            <Button type="button" onClick={handleAddKeyword} className="mt-1">إضافة</Button>
+            <Button type="button" onClick={handleAddKeyword} className="mt-1">
+              <Plus className="w-4 h-4 ml-1" />
+              إضافة
+            </Button>
           </div>
           <div className="flex flex-wrap gap-2">
             {keywords.map((kw) => (
-              <span key={kw} className="bg-blue-100 text-blue-800 px-2 py-1 rounded flex items-center gap-1">
+              <span key={kw} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
                 {kw}
-                <button type="button" onClick={() => handleRemoveKeyword(kw)} className="text-red-500"><Trash2 className="w-3 h-3" /></button>
+                <button type="button" onClick={() => handleRemoveKeyword(kw)} className="text-red-500 hover:text-red-700 mr-1">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </span>
             ))}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">خطوات الحل</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">خطوات الحل (المرتبة)</label>
           <div className="flex gap-2 mb-2">
             <Input
               value={stepInput}
               onChange={(e) => setStepInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddStep())}
-              placeholder="اكتب خطوة واضغط إضافة"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddStep();
+                }
+              }}
+              placeholder="اكتب خطوة من خطوات الحل واضغط إضافة"
             />
-            <Button type="button" onClick={handleAddStep} className="mt-1">إضافة</Button>
+            <Button type="button" onClick={handleAddStep} className="mt-1">
+              <Plus className="w-4 h-4 ml-1" />
+              إضافة
+            </Button>
           </div>
-          <ol className="list-decimal list-inside space-y-2">
-            {steps.map((step, index) => (
-              <li key={index} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                <span>{step}</span>
-                <button type="button" onClick={() => handleRemoveStep(index)} className="text-red-500"><Trash2 className="w-4 h-4" /></button>
-              </li>
-            ))}
-          </ol>
+          {steps.length === 0 ? (
+            <p className="text-xs text-gray-400">لم يتم إضافة خطوات بعد. أضف خطوات مرتبة لمساعدة الذكاء الاصطناعي على حل المشكلة.</p>
+          ) : (
+            <ol className="list-decimal list-inside space-y-2">
+              {steps.map((step, index) => (
+                <li key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded border">
+                  <span>{step}</span>
+                  <button type="button" onClick={() => handleRemoveStep(index)} className="text-red-500 hover:text-red-700">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
 
         <Select
           label="الحالة"
           options={[
-            { value: 'active', label: 'نشط' },
-            { value: 'inactive', label: 'غير نشط' }
+            { value: 'Active', label: 'نشط' },
+            { value: 'Draft', label: 'مسودة' },
+            { value: 'Inactive', label: 'غير نشط' }
           ]}
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         />
 
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={() => navigate('/admin/knowledge/scenarios')}>
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={() => navigate('/admin/knowledge')}>
             إلغاء
           </Button>
           <Button type="submit" isLoading={isSaving}>
-            حفظ
+            حفظ السيناريو
           </Button>
         </div>
       </form>

@@ -8,17 +8,11 @@ import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import knowledgeService, { Scenario, Category } from '../services/knowledgeService';
-import { Plus, Edit2, Trash2, Eye, Power } from 'lucide-react';
-
-interface ExtendedScenario extends Scenario {
-  status?: string;
-  description?: string;
-  steps?: string[];
-}
+import { Plus, Edit2, Trash2, Power } from 'lucide-react';
 
 export function ScenarioListPage() {
   const navigate = useNavigate();
-  const [scenarios, setScenarios] = useState<ExtendedScenario[]>([]);
+  const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,63 +66,64 @@ export function ScenarioListPage() {
     }
   };
 
-  const handleToggleStatus = async (scenario: ExtendedScenario) => {
+  const handleToggleStatus = async (scenario: Scenario) => {
     try {
-      const newStatus = scenario.status === 'active' ? 'inactive' : 'active';
-      await knowledgeService.updateScenario(scenario.id, { status: newStatus } as any);
+      const newStatus = scenario.status === 'Active' ? 'Inactive' : 'Active';
+      await knowledgeService.updateStatus(scenario.id, newStatus);
       await fetchData();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       alert('حدث خطأ أثناء تحديث الحالة.');
     }
   };
 
   const filteredScenarios = scenarios.filter((s) => {
-    const titleOrName = (s.title || s.name || '').toLowerCase();
+    const titleOrName = (s.name || s.title || '').toLowerCase();
     const matchesSearch = titleOrName.includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter ? String(s.categoryId) === String(categoryFilter) : true;
+    const matchesCategory = categoryFilter ? (String(s.categoryId) === String(categoryFilter) || s.categoryName === categoryFilter) : true;
     const matchesStatus = statusFilter ? s.status === statusFilter : true;
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
   const columns = [
     { 
-      key: 'title', 
-      header: 'العنوان',
-      cell: (item: ExtendedScenario) => item.title || item.name || 'بدون عنوان'
+      key: 'name', 
+      header: 'اسم السيناريو',
+      cell: (item: Scenario) => (
+        <span className="font-medium text-gray-900">{item.name || item.title || 'بدون عنوان'}</span>
+      )
     },
     { 
-      key: 'categoryId', 
+      key: 'categoryName', 
       header: 'التصنيف',
-      cell: (item: ExtendedScenario) => {
-        const cat = categories.find(c => c.id === item.categoryId);
-        return cat ? cat.name : '-';
-      }
+      cell: (item: Scenario) => item.categoryName || '-'
+    },
+    {
+      key: 'stepCount',
+      header: 'عدد الخطوات',
+      cell: (item: Scenario) => item.stepCount ?? (item.resolutionSteps?.length || item.steps?.length || 0)
     },
     { 
       key: 'status', 
       header: 'الحالة',
-      cell: (item: ExtendedScenario) => (
-        <span className={`px-2 py-1 rounded text-xs ${item.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-          {item.status === 'active' ? 'نشط' : 'غير نشط'}
+      cell: (item: Scenario) => (
+        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${item.status === 'Active' ? 'bg-green-100 text-green-800' : (item.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')}`}>
+          {item.status === 'Active' ? 'نشط' : (item.status === 'Draft' ? 'مسودة' : 'غير نشط')}
         </span>
       )
     },
     {
       key: 'actions',
       header: 'الإجراءات',
-      cell: (item: ExtendedScenario) => (
+      cell: (item: Scenario) => (
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => navigate(`/admin/knowledge/view/${item.id}`)}>
-            <Eye className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => navigate(`/admin/knowledge/edit/${item.id}`)}>
+          <Button variant="outline" size="sm" onClick={() => navigate(`/admin/knowledge/edit/${item.id}`)} title="تعديل">
             <Edit2 className="w-4 h-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleToggleStatus(item)}>
+          <Button variant="outline" size="sm" onClick={() => handleToggleStatus(item)} title="تبديل الحالة">
             <Power className="w-4 h-4" />
           </Button>
-          <Button variant="danger" size="sm" onClick={() => handleDeleteClick(item.id)}>
+          <Button variant="danger" size="sm" onClick={() => handleDeleteClick(item.id)} title="حذف">
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
@@ -152,7 +147,7 @@ export function ScenarioListPage() {
       <div className="flex gap-4 mb-4">
         <div className="flex-1">
           <Input
-            placeholder="بحث..."
+            placeholder="بحث في السيناريوهات..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -171,8 +166,9 @@ export function ScenarioListPage() {
           <Select
             options={[
               { value: '', label: 'كل الحالات' },
-              { value: 'active', label: 'نشط' },
-              { value: 'inactive', label: 'غير نشط' }
+              { value: 'Active', label: 'نشط' },
+              { value: 'Draft', label: 'مسودة' },
+              { value: 'Inactive', label: 'غير نشط' }
             ]}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
