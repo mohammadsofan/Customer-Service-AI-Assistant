@@ -5,6 +5,7 @@ import { Input } from '../components/Input';
 import { Select } from '../components/Select';
 import { Textarea } from '../components/Textarea';
 import { Alert } from '../components/Alert';
+import { ErrorDialog } from '../components/ErrorDialog';
 import { LoadingState } from '../components/LoadingState';
 import knowledgeService, { Category, Scenario } from '../services/knowledgeService';
 import { Plus, Trash2 } from 'lucide-react';
@@ -27,6 +28,27 @@ export function EditScenarioPage() {
   const [initialStatus, setInitialStatus] = useState('Active');
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [errorDialog, setErrorDialog] = useState<{
+    isOpen: boolean;
+    title?: string;
+    message: string;
+    errors?: string[];
+  }>({
+    isOpen: false,
+    message: '',
+  });
+
+  const showError = (message: string, errors?: string[], title?: string) => {
+    setErrorDialog({
+      isOpen: true,
+      title: title || 'حدث خطأ أثناء الحفظ',
+      message,
+      errors,
+    });
+    setErrorMessage(message);
+    toast.error(message);
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -83,11 +105,15 @@ export function EditScenarioPage() {
     setErrorMessage(null);
 
     if (!name.trim() || !description.trim() || !categoryId) {
-      setErrorMessage('الرجاء ملء الحقول المطلوبة (اسم السيناريو، الوصف، التصنيف)');
+      const missingFields: string[] = [];
+      if (!name.trim()) missingFields.push('اسم السيناريو مطلوب');
+      if (!description.trim()) missingFields.push('وصف السيناريو مطلوب');
+      if (!categoryId) missingFields.push('يرجى اختيار تصنيف للسيناريو');
+      showError('الرجاء استكمال جميع الحقول الإلزامية قبل حفظ السيناريو.', missingFields, 'تنبيه: بيانات غير مكتملة');
       return;
     }
     if (status === 'Active' && steps.length === 0) {
-      setErrorMessage('تفعيل السيناريو يتطلب إضافة خطوة حل واحدة على الأقل');
+      showError('تفعيل السيناريو يتطلب إضافة خطوة حل واحدة على الأقل لتمكين الذكاء الاصطناعي من الإجابة.', ['أضف خطوات حل مرتبة أو اضبط الحالة إلى "مسودة"'], 'تنبيه: خطوات الحل مطلوبة');
       return;
     }
 
@@ -109,17 +135,21 @@ export function EditScenarioPage() {
       navigate('/admin/knowledge');
     } catch (err: any) {
       console.error('Error updating scenario:', err);
-      let msg = 'حدث خطأ أثناء الحفظ.';
+      let errorList: string[] = [];
+      let mainMsg = 'تعذر تحديث السيناريو في النظام.';
+
       if (err.response?.data?.errors) {
-        msg = Object.values(err.response.data.errors).flat().join(' | ');
+        errorList = Object.values(err.response.data.errors).flat() as string[];
+        mainMsg = 'يرجى مراجعة وتصحيح المدخلات التالية والمحاولة مرة أخرى.';
       } else if (err.response?.data?.message) {
-        msg = err.response.data.message;
+        mainMsg = err.response.data.message;
       } else if (err.response?.data?.title) {
-        msg = err.response.data.title;
+        mainMsg = err.response.data.title;
       } else if (err.message) {
-        msg = err.message;
+        mainMsg = err.message;
       }
-      setErrorMessage(msg);
+
+      showError(mainMsg, errorList.length > 0 ? errorList : undefined, 'فشل تحديث السيناريو');
     } finally {
       setIsSaving(false);
     }
@@ -130,6 +160,14 @@ export function EditScenarioPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6" dir="rtl">
       <h1 className="text-2xl font-bold">تعديل السيناريو</h1>
+
+      <ErrorDialog
+        isOpen={errorDialog.isOpen}
+        onClose={() => setErrorDialog((prev) => ({ ...prev, isOpen: false }))}
+        title={errorDialog.title}
+        message={errorDialog.message}
+        errors={errorDialog.errors}
+      />
 
       {errorMessage && (
         <Alert

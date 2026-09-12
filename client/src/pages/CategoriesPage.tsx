@@ -6,8 +6,10 @@ import { Input } from '../components/Input';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import { ErrorDialog } from '../components/ErrorDialog';
 import knowledgeService, { Category } from '../services/knowledgeService';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -22,6 +24,24 @@ export function CategoriesPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [errorDialog, setErrorDialog] = useState<{
+    isOpen: boolean;
+    title?: string;
+    message: string;
+  }>({
+    isOpen: false,
+    message: '',
+  });
+
+  const showError = (message: string, title?: string) => {
+    setErrorDialog({
+      isOpen: true,
+      title: title || 'حدث خطأ',
+      message,
+    });
+    toast.error(message);
+  };
 
   useEffect(() => {
     fetchCategories();
@@ -52,20 +72,26 @@ export function CategoriesPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      showError('يرجى كتابة اسم التصنيف.', 'حقل مطلوب');
+      return;
+    }
 
     try {
       setIsSaving(true);
       if (editingCategory) {
         await knowledgeService.updateCategory(editingCategory.id, { name });
+        toast.success('تم تحديث التصنيف بنجاح');
       } else {
         await knowledgeService.createCategory({ name });
+        toast.success('تم إنشاء التصنيف بنجاح');
       }
       await fetchCategories();
       setIsModalOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('حدث خطأ أثناء الحفظ.');
+      const msg = err.response?.data?.message || 'حدث خطأ أثناء حفظ التصنيف.';
+      showError(msg, 'فشل الحفظ');
     } finally {
       setIsSaving(false);
     }
@@ -81,11 +107,13 @@ export function CategoriesPage() {
     try {
       setIsDeleting(true);
       await knowledgeService.deleteCategory(deletingId);
+      toast.success('تم حذف التصنيف بنجاح');
       await fetchCategories();
       setIsDeleteOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('حدث خطأ أثناء الحذف.');
+      const msg = err.response?.data?.message || 'حدث خطأ أثناء محاولة حذف التصنيف.';
+      showError(msg, 'فشل الحذف');
     } finally {
       setIsDeleting(false);
       setDeletingId(null);
@@ -165,6 +193,13 @@ export function CategoriesPage() {
         confirmText="حذف"
         cancelText="إلغاء"
         isLoading={isDeleting}
+      />
+
+      <ErrorDialog
+        isOpen={errorDialog.isOpen}
+        onClose={() => setErrorDialog((prev) => ({ ...prev, isOpen: false }))}
+        title={errorDialog.title}
+        message={errorDialog.message}
       />
     </div>
   );

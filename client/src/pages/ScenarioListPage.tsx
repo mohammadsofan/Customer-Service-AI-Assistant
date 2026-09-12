@@ -7,8 +7,10 @@ import { Select } from '../components/Select';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import { ErrorDialog } from '../components/ErrorDialog';
 import knowledgeService, { Scenario, Category } from '../services/knowledgeService';
 import { Plus, Edit2, Trash2, Power } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export function ScenarioListPage() {
   const navigate = useNavigate();
@@ -24,6 +26,26 @@ export function ScenarioListPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [errorDialog, setErrorDialog] = useState<{
+    isOpen: boolean;
+    title?: string;
+    message: string;
+    errors?: string[];
+  }>({
+    isOpen: false,
+    message: '',
+  });
+
+  const showError = (message: string, errors?: string[], title?: string) => {
+    setErrorDialog({
+      isOpen: true,
+      title: title || 'حدث خطأ',
+      message,
+      errors,
+    });
+    toast.error(message);
+  };
 
   useEffect(() => {
     fetchData();
@@ -55,11 +77,13 @@ export function ScenarioListPage() {
     try {
       setIsDeleting(true);
       await knowledgeService.deleteScenario(deletingId);
+      toast.success('تم حذف السيناريو بنجاح');
       await fetchData();
       setIsDeleteOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('حدث خطأ أثناء الحذف.');
+      const msg = err.response?.data?.message || 'حدث خطأ أثناء محاولة حذف السيناريو.';
+      showError(msg, undefined, 'فشل الحذف');
     } finally {
       setIsDeleting(false);
       setDeletingId(null);
@@ -70,10 +94,12 @@ export function ScenarioListPage() {
     try {
       const newStatus = scenario.status === 'Active' ? 'Inactive' : 'Active';
       await knowledgeService.updateStatus(scenario.id, newStatus);
+      toast.success(`تم تغيير حالة السيناريو إلى: ${newStatus === 'Active' ? 'نشط' : 'غير نشط'}`);
       await fetchData();
     } catch (err: any) {
       console.error(err);
-      alert('حدث خطأ أثناء تحديث الحالة.');
+      const msg = err.response?.data?.message || 'حدث خطأ أثناء محاولة تحديث حالة السيناريو.';
+      showError(msg, undefined, 'فشل تحديث الحالة');
     }
   };
 
@@ -187,6 +213,14 @@ export function ScenarioListPage() {
         confirmText="حذف"
         cancelText="إلغاء"
         isLoading={isDeleting}
+      />
+
+      <ErrorDialog
+        isOpen={errorDialog.isOpen}
+        onClose={() => setErrorDialog((prev) => ({ ...prev, isOpen: false }))}
+        title={errorDialog.title}
+        message={errorDialog.message}
+        errors={errorDialog.errors}
       />
     </div>
   );
