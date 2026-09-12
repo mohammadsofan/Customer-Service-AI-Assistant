@@ -303,7 +303,7 @@ export const EmployeeSupportPage: React.FC = () => {
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 space-y-1.5">
                 <div className="font-bold text-slate-800">إجراءات الموظف الموصى بها:</div>
                 <ul className="list-disc list-inside space-y-1">
-                  <li>فتح تذكرة دعم فني جديدة موجهة لقسم Back Office.</li>
+                  <li>تواصل مع ال Back Office.</li>
                   <li>تزويدهم بتفاصيل المشكلة ورقم اشتراك العميل بدقة.</li>
                   <li>تم تسجيل هذا السؤال آلياً لمراجعته من قبل إدارة المعرفة لاحقاً.</li>
                 </ul>
