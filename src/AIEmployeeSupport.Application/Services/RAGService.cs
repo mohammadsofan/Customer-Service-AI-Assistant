@@ -76,7 +76,11 @@ public class RAGService : IRAGService
             if (scenario != null)
             {
                 var steps = string.Join("\n", scenario.ResolutionSteps.OrderBy(s => s.StepOrder).Select(s => $"{s.StepOrder}. {s.StepText}"));
-                retrievedKnowledge.Add($"[SCENARIO: {scenario.Name}]\n{scenario.Description}\nSteps:\n{steps}\n[/SCENARIO]");
+                var keywords = scenario.ScenarioKeywords != null && scenario.ScenarioKeywords.Any()
+                    ? string.Join(", ", scenario.ScenarioKeywords.Select(sk => sk.Keyword?.Name).Where(k => !string.IsNullOrWhiteSpace(k)))
+                    : string.Empty;
+                var keywordsSection = string.IsNullOrWhiteSpace(keywords) ? "" : $"Keywords: {keywords}\n";
+                retrievedKnowledge.Add($"[SCENARIO: {scenario.Name}]\n{keywordsSection}{scenario.Description}\nSteps:\n{steps}\n[/SCENARIO]");
             }
         }
 
