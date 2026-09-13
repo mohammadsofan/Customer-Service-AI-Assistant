@@ -8,6 +8,9 @@ public class UnansweredAnalyticsDto
 public class UnansweredQuestionItem
 {
     public Guid Id { get; set; }
+    public Guid? EmployeeId { get; set; }
+    public string? EmployeeName { get; set; }
+    public string? EmployeeEmail { get; set; }
     public string QuestionText { get; set; } = string.Empty;
     public int Frequency { get; set; }
     public DateTime FirstAsked { get; set; }

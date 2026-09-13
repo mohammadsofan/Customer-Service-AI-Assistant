@@ -82,6 +82,7 @@ public class SupportQuestionRepository : ISupportQuestionRepository
 
     public async Task<IEnumerable<SupportQuestion>> GetUnansweredAsync(CancellationToken cancellationToken = default)
         => await _context.SupportQuestions.AsNoTracking()
+            .Include(q => q.Employee)
             .Where(q => q.Status == QuestionStatus.New || q.Status == QuestionStatus.NoAnswer)
             .OrderByDescending(q => q.CreatedAt)
             .ToListAsync(cancellationToken);

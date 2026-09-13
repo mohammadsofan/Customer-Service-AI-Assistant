@@ -8,6 +8,9 @@ public class QuestionAnalyticsDto
 public class QuestionAnalyticsItem
 {
     public Guid Id { get; set; }
+    public Guid? EmployeeId { get; set; }
+    public string? EmployeeName { get; set; }
+    public string? EmployeeEmail { get; set; }
     public string QuestionText { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public bool AnsweredByAI { get; set; }

@@ -58,6 +58,9 @@ public class AnalyticsService : IAnalyticsService
             Questions = query.Select(q => new QuestionAnalyticsItem
             {
                 Id = q.Id,
+                EmployeeId = q.EmployeeId,
+                EmployeeName = q.Employee != null ? q.Employee.FullName : null,
+                EmployeeEmail = q.Employee != null ? q.Employee.Email : null,
                 QuestionText = q.QuestionText,
                 Status = q.Status.ToString(),
                 AnsweredByAI = q.AnsweredByAI,
@@ -99,13 +102,20 @@ public class AnalyticsService : IAnalyticsService
         
         var grouped = unansweredQuestions
             .GroupBy(q => q.QuestionText.ToLowerInvariant().Trim())
-            .Select(g => new UnansweredQuestionItem
+            .Select(g => 
             {
-                Id = g.First().Id,
-                QuestionText = g.First().QuestionText,
-                Frequency = g.Count(),
-                FirstAsked = g.Min(q => q.CreatedAt),
-                LastAsked = g.Max(q => q.CreatedAt)
+                var latest = g.OrderByDescending(q => q.CreatedAt).First();
+                return new UnansweredQuestionItem
+                {
+                    Id = latest.Id,
+                    EmployeeId = latest.EmployeeId,
+                    EmployeeName = latest.Employee != null ? latest.Employee.FullName : null,
+                    EmployeeEmail = latest.Employee != null ? latest.Employee.Email : null,
+                    QuestionText = latest.QuestionText,
+                    Frequency = g.Count(),
+                    FirstAsked = g.Min(q => q.CreatedAt),
+                    LastAsked = g.Max(q => q.CreatedAt)
+                };
             })
             .OrderByDescending(x => x.Frequency)
             .ToList();

@@ -50,6 +50,8 @@ export interface UnansweredQuestion {
     firstAsked?: string;
     frequency?: number;
     employeeId?: string;
+    employeeName?: string;
+    employeeEmail?: string;
 }
 
 const analyticsService = {
@@ -111,7 +113,10 @@ const analyticsService = {
             question: u.questionText || u.question || '',
             questionText: u.questionText || u.question || '',
             timestamp: u.lastAsked || u.firstAsked || u.createdAt || new Date().toISOString(),
-            frequency: u.frequency || 1
+            frequency: u.frequency || 1,
+            employeeId: u.employeeId,
+            employeeName: u.employeeName,
+            employeeEmail: u.employeeEmail
         }));
     }
 };

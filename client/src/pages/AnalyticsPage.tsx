@@ -42,14 +42,54 @@ export const AnalyticsPage = () => {
   ];
 
   const unansweredColumns = [
-    { key: 'question', header: 'نص السؤال' },
-    { key: 'timestamp', header: 'الوقت', cell: (item: UnansweredQuestion) => new Date(item.timestamp || Date.now()).toLocaleString('ar-EG') },
-    { key: 'employeeId', header: 'الموظف', cell: (item: UnansweredQuestion) => item.employeeId || 'غير متوفر' }
+    { 
+      key: 'question', 
+      header: 'نص السؤال',
+      cell: (item: UnansweredQuestion) => (
+        <span className="font-medium text-gray-900 block max-w-xs truncate" title={item.question || item.questionText}>
+          {item.question || item.questionText}
+        </span>
+      )
+    },
+    { 
+      key: 'employee', 
+      header: 'الموظف', 
+      cell: (item: UnansweredQuestion) => {
+        const name = item.employeeName || (item.employeeId ? 'موظف' : 'غير متوفر');
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 font-bold text-xs flex items-center justify-center border border-blue-200 shrink-0">
+              {item.employeeName ? item.employeeName.charAt(0).toUpperCase() : '؟'}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="font-medium text-gray-900 text-sm truncate">{name}</span>
+              {item.employeeEmail && (
+                <span className="text-xs text-gray-400 truncate">{item.employeeEmail}</span>
+              )}
+            </div>
+          </div>
+        );
+      }
+    },
+    { 
+      key: 'frequency', 
+      header: 'التكرار',
+      cell: (item: UnansweredQuestion) => (
+        <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+          {item.frequency || 1}
+        </span>
+      )
+    },
+    { 
+      key: 'timestamp', 
+      header: 'الوقت', 
+      cell: (item: UnansweredQuestion) => new Date(item.timestamp || Date.now()).toLocaleDateString('ar-EG') 
+    }
   ];
 
   return (
     <div className="p-6 rtl bg-gray-50 min-h-screen" dir="rtl">
-      <h2 className="text-2xl font-bold mb-6">الإحصائيات</h2>
+      <h2 className="text-2xl font-bold mb-6 text-gray-900">التحليلات والتقارير</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <MetricCard title="إجمالي الأسئلة" value={overview.totalQuestions || 0} />
