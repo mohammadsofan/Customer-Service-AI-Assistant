@@ -8,6 +8,7 @@ export const AnalyticsPage = () => {
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
   const [knowledge, setKnowledge] = useState<KnowledgeAnalytics[]>([]);
   const [unanswered, setUnanswered] = useState<UnansweredQuestion[]>([]);
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,10 +83,25 @@ export const AnalyticsPage = () => {
     },
     { 
       key: 'timestamp', 
-      header: 'الوقت', 
-      cell: (item: UnansweredQuestion) => new Date(item.timestamp || Date.now()).toLocaleDateString('ar-EG') 
+      header: 'التاريخ', 
+      cell: (item: UnansweredQuestion) => {
+        if (!item.timestamp) return 'غير متوفر';
+        const d = new Date(item.timestamp);
+        return (
+          <div className="flex flex-col text-xs text-gray-600">
+            <span className="font-medium text-gray-800">{d.toLocaleDateString('ar-EG')}</span>
+            <span className="text-gray-400">{d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+        );
+      }
     }
   ];
+
+  const sortedUnanswered = [...unanswered].sort((a, b) => {
+    const timeA = new Date(a.timestamp || 0).getTime();
+    const timeB = new Date(b.timestamp || 0).getTime();
+    return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+  });
 
   return (
     <div className="p-6 rtl bg-gray-50 min-h-screen" dir="rtl">
@@ -105,8 +121,19 @@ export const AnalyticsPage = () => {
         </div>
         
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h3 className="text-xl font-bold mb-4">أسئلة غير مجابة</h3>
-          <DataTable columns={unansweredColumns} data={unanswered} />
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold">أسئلة غير مجابة</h3>
+            <button
+              type="button"
+              onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+              className="text-xs text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md font-medium transition-colors border border-blue-200 flex items-center gap-1.5"
+              title="تغيير اتجاه الترتيب"
+            >
+              <span>الترتيب بالتاريخ:</span>
+              <span className="font-semibold">{sortOrder === 'desc' ? 'الأحدث أولاً ↓' : 'الأقدم أولاً ↑'}</span>
+            </button>
+          </div>
+          <DataTable columns={unansweredColumns} data={sortedUnanswered} />
         </div>
       </div>
     </div>

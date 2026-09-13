@@ -117,7 +117,7 @@ public class AnalyticsService : IAnalyticsService
                     LastAsked = g.Max(q => q.CreatedAt)
                 };
             })
-            .OrderByDescending(x => x.Frequency)
+            .OrderByDescending(x => x.LastAsked)
             .ToList();
 
         return new UnansweredAnalyticsDto
