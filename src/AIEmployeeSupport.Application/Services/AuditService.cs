@@ -61,13 +61,18 @@ public class AuditService : IAuditService
         
         foreach (var item in items)
         {
-            var user = await _userRepository.GetByIdAsync(item.UserId, cancellationToken);
-            var userName = user != null ? user.FullName : "Unknown";
+            var user = item.UserId != Guid.Empty ? await _userRepository.GetByIdAsync(item.UserId, cancellationToken) : null;
+            var userName = user != null ? user.FullName : (item.UserId == Guid.Empty ? "النظام" : "مستخدم غير معروف");
+            var userEmail = user?.Email;
+            var userRole = user != null ? (user.Role == UserRole.Administrator ? "مدير النظام" : "موظف دعم") : (item.UserId == Guid.Empty ? "النظام" : null);
 
             auditLogDtos.Add(new AuditLogDto
             {
                 Id = item.Id,
+                UserId = item.UserId,
                 UserName = userName,
+                UserEmail = userEmail,
+                UserRole = userRole,
                 Action = item.Action.ToString(),
                 EntityType = item.EntityType,
                 EntityId = item.EntityId,
