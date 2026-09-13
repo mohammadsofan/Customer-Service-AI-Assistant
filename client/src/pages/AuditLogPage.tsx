@@ -7,25 +7,32 @@ import { ErrorState } from '../components/ErrorState';
 
 export const AuditLogPage = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [search, setSearch] = useState('');
   const pageSize = 15;
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchLogs(page, search);
-    }, 300);
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
     return () => clearTimeout(timer);
-  }, [page, search]);
+  }, [search]);
 
-  const fetchLogs = async (currentPage = page, currentSearch = search) => {
+  useEffect(() => {
+    fetchLogs(page, debouncedSearch);
+  }, [page, debouncedSearch]);
+
+  const fetchLogs = async (currentPage = page, currentSearch = debouncedSearch) => {
     try {
-      setLoading(true);
+      setIsSearching(true);
       const data = await auditService.getAuditLogs(currentPage, pageSize, currentSearch);
       setLogs(data.items);
       setTotalPages(data.totalPages);
@@ -34,7 +41,8 @@ export const AuditLogPage = () => {
     } catch (err) {
       setError('حدث خطأ أثناء تحميل سجل التدقيق');
     } finally {
-      setLoading(false);
+      setIsSearching(false);
+      setInitialLoading(false);
     }
   };
 
@@ -52,7 +60,7 @@ export const AuditLogPage = () => {
     UserLoggedIn: { label: 'تسجيل دخول', bg: 'bg-green-100', text: 'text-green-800' }
   };
 
-  if (loading && logs.length === 0) return <LoadingState />;
+  if (initialLoading) return <LoadingState />;
   if (error) return <ErrorState message={error} onRetry={() => fetchLogs(1, '')} />;
 
   const columns = [
@@ -121,15 +129,13 @@ export const AuditLogPage = () => {
       <div className="mb-6 max-w-md">
         <SearchBox 
           value={search} 
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }} 
+          onChange={(e) => setSearch(e.target.value)} 
+          loading={isSearching}
           placeholder="ابحث في الإجراء، التفاصيل أو المستخدم..."
         />
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100">
+      <div className={`bg-white rounded-lg shadow-sm border border-gray-100 ${isSearching ? 'opacity-70 transition-opacity' : 'transition-opacity'}`}>
         <DataTable 
           columns={columns} 
           data={logs} 

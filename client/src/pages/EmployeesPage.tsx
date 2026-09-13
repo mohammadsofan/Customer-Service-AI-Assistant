@@ -11,9 +11,11 @@ import employeeService, { type Employee } from '../services/employeeService';
 
 export function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -29,14 +31,19 @@ export function EmployeesPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      loadEmployees(page, search);
-    }, 300);
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
     return () => clearTimeout(timer);
-  }, [page, search]);
+  }, [search]);
 
-  const loadEmployees = async (currentPage = page, currentSearch = search) => {
+  useEffect(() => {
+    loadEmployees(page, debouncedSearch);
+  }, [page, debouncedSearch]);
+
+  const loadEmployees = async (currentPage = page, currentSearch = debouncedSearch) => {
     try {
-      setIsLoading(true);
+      setIsSearching(true);
       const data = await employeeService.getEmployees(currentPage, 10, currentSearch);
       setEmployees(data.items.map(e => ({ ...e, isActive: (e as any).isActive ?? true })));
       setTotalPages(data.totalPages);
@@ -44,7 +51,8 @@ export function EmployeesPage() {
     } catch (error) {
       toast.error('حدث خطأ أثناء تحميل الموظفين');
     } finally {
-      setIsLoading(false);
+      setIsSearching(false);
+      setInitialLoading(false);
     }
   };
 
@@ -150,24 +158,24 @@ export function EmployeesPage() {
       <div className="mb-4 max-w-md">
         <SearchBox
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => setSearch(e.target.value)}
+          loading={isSearching}
           placeholder="ابحث بالاسم أو البريد..."
         />
       </div>
 
-      {isLoading ? (
-        <div>جاري التحميل...</div>
+      {initialLoading ? (
+        <div className="py-12 text-center text-gray-500">جاري التحميل...</div>
       ) : (
-        <DataTable
-          data={employees}
-          columns={columns}
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-        />
+        <div className={isSearching ? 'opacity-70 transition-opacity' : 'transition-opacity'}>
+          <DataTable
+            data={employees}
+            columns={columns}
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
+        </div>
       )}
 
       <Modal

@@ -14,10 +14,12 @@ import toast from 'react-hot-toast';
 
 export function KeywordsPage() {
   const [keywords, setKeywords] = useState<Keyword[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -50,14 +52,19 @@ export function KeywordsPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchKeywords(page, search);
-    }, 300);
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
     return () => clearTimeout(timer);
-  }, [page, search]);
+  }, [search]);
 
-  const fetchKeywords = async (currentPage = page, currentSearch = search) => {
+  useEffect(() => {
+    fetchKeywords(page, debouncedSearch);
+  }, [page, debouncedSearch]);
+
+  const fetchKeywords = async (currentPage = page, currentSearch = debouncedSearch) => {
     try {
-      setLoading(true);
+      setIsSearching(true);
       const data = await knowledgeService.getPagedKeywords(currentPage, 10, currentSearch);
       setKeywords(data.items);
       setTotalPages(data.totalPages);
@@ -66,7 +73,8 @@ export function KeywordsPage() {
     } catch (err) {
       setError('فشل في جلب الكلمات المفتاحية.');
     } finally {
-      setLoading(false);
+      setIsSearching(false);
+      setInitialLoading(false);
     }
   };
 
@@ -142,8 +150,8 @@ export function KeywordsPage() {
     },
   ];
 
-  if (loading) return <LoadingState />;
-  if (error) return <ErrorState message={error} onRetry={fetchKeywords} />;
+  if (initialLoading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={() => fetchKeywords(1, '')} />;
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -158,21 +166,21 @@ export function KeywordsPage() {
       <div className="max-w-md">
         <SearchBox
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => setSearch(e.target.value)}
+          loading={isSearching}
           placeholder="ابحث عن كلمة مفتاحية..."
         />
       </div>
 
-      <DataTable
-        data={keywords}
-        columns={columns}
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-      />
+      <div className={isSearching ? 'opacity-70 transition-opacity' : 'transition-opacity'}>
+        <DataTable
+          data={keywords}
+          columns={columns}
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      </div>
 
       <Modal
         isOpen={isModalOpen}

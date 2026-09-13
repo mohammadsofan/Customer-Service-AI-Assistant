@@ -1,16 +1,22 @@
 import React from 'react';
 
 import { cn } from '../lib/utils';
-import { Search } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 
-export interface SearchBoxProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+export interface SearchBoxProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  loading?: boolean;
+}
 
 export const SearchBox = React.forwardRef<HTMLInputElement, SearchBoxProps>(
-  ({ className, ...props }, ref) => {
+  ({ className, loading = false, ...props }, ref) => {
     return (
       <div className="relative w-full" dir="rtl">
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-          <Search className="h-4 w-4 text-gray-400" />
+          {loading ? (
+            <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+          ) : (
+            <Search className="h-4 w-4 text-gray-400" />
+          )}
         </div>
         <input
           ref={ref}

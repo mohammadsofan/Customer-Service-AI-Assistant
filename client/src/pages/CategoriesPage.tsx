@@ -14,10 +14,12 @@ import toast from 'react-hot-toast';
 
 export function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -51,14 +53,19 @@ export function CategoriesPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchCategories(page, search);
-    }, 300);
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
     return () => clearTimeout(timer);
-  }, [page, search]);
+  }, [search]);
 
-  const fetchCategories = async (currentPage = page, currentSearch = search) => {
+  useEffect(() => {
+    fetchCategories(page, debouncedSearch);
+  }, [page, debouncedSearch]);
+
+  const fetchCategories = async (currentPage = page, currentSearch = debouncedSearch) => {
     try {
-      setLoading(true);
+      setIsSearching(true);
       const data = await knowledgeService.getPagedCategories(currentPage, 10, currentSearch);
       setCategories(data.items);
       setTotalPages(data.totalPages);
@@ -67,7 +74,8 @@ export function CategoriesPage() {
     } catch (err) {
       setError('فشل في جلب التصنيفات.');
     } finally {
-      setLoading(false);
+      setIsSearching(false);
+      setInitialLoading(false);
     }
   };
 
@@ -158,8 +166,8 @@ export function CategoriesPage() {
     },
   ];
 
-  if (loading) return <LoadingState />;
-  if (error) return <ErrorState message={error} onRetry={fetchCategories} />;
+  if (initialLoading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={() => fetchCategories(1, '')} />;
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -174,21 +182,21 @@ export function CategoriesPage() {
       <div className="max-w-md">
         <SearchBox
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => setSearch(e.target.value)}
+          loading={isSearching}
           placeholder="ابحث عن تصنيف..."
         />
       </div>
 
-      <DataTable
-        data={categories}
-        columns={columns}
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-      />
+      <div className={isSearching ? 'opacity-70 transition-opacity' : 'transition-opacity'}>
+        <DataTable
+          data={categories}
+          columns={columns}
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      </div>
 
       <Modal
         isOpen={isModalOpen}
