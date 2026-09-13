@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react';
-import analyticsService, { AnalyticsOverview, KnowledgeAnalytics, UnansweredQuestion } from '../services/analyticsService';
+import analyticsService, { 
+  AnalyticsOverview, 
+  KnowledgeAnalytics, 
+  UnansweredQuestion, 
+  CategoryAnalytics 
+} from '../services/analyticsService';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { DataTable } from '../components/DataTable';
+import { Layers } from 'lucide-react';
 
 export const AnalyticsPage = () => {
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
   const [knowledge, setKnowledge] = useState<KnowledgeAnalytics[]>([]);
+  const [categories, setCategories] = useState<CategoryAnalytics[]>([]);
   const [unanswered, setUnanswered] = useState<UnansweredQuestion[]>([]);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [loading, setLoading] = useState(true);
@@ -15,13 +22,15 @@ export const AnalyticsPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [overviewData, knowledgeData, unansweredData] = await Promise.all([
+        const [overviewData, knowledgeData, categoriesData, unansweredData] = await Promise.all([
           analyticsService.getOverview(),
           analyticsService.getKnowledgeAnalytics(),
+          analyticsService.getCategoryAnalytics(),
           analyticsService.getUnanswered()
         ]);
         setOverview(overviewData);
         setKnowledge(knowledgeData);
+        setCategories(categoriesData);
         setUnanswered(unansweredData);
         setError(null);
       } catch (err) {
@@ -37,9 +46,96 @@ export const AnalyticsPage = () => {
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
   if (!overview) return null;
 
+  const categoryColumns = [
+    { 
+      key: 'categoryName', 
+      header: 'اسم التصنيف',
+      cell: (item: CategoryAnalytics) => (
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <Layers className="w-4 h-4" />
+          </div>
+          <span className="font-semibold text-gray-900">{item.categoryName}</span>
+        </div>
+      )
+    },
+    { 
+      key: 'scenarioCount', 
+      header: 'عدد السيناريوهات',
+      cell: (item: CategoryAnalytics) => (
+        <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700">
+          {item.scenarioCount} سيناريو
+        </span>
+      )
+    },
+    { 
+      key: 'questionCount', 
+      header: 'الاستفسارات المرتبطة',
+      cell: (item: CategoryAnalytics) => (
+        <span className="font-bold text-gray-900">{item.questionCount}</span>
+      )
+    },
+    { 
+      key: 'percentage', 
+      header: 'نسبة الاستخدام',
+      cell: (item: CategoryAnalytics) => (
+        <div className="flex items-center gap-3 min-w-[140px]">
+          <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+            <div 
+              className="bg-[#0055b8] h-2.5 rounded-full transition-all duration-500" 
+              style={{ width: `${Math.min(item.percentage, 100)}%` }} 
+            />
+          </div>
+          <span className="text-xs font-bold text-gray-700 w-10 text-left shrink-0">
+            {item.percentage}%
+          </span>
+        </div>
+      )
+    }
+  ];
+
   const knowledgeColumns = [
-    { key: 'categoryName', header: 'اسم التصنيف' },
-    { key: 'usageCount', header: 'مرات الاستخدام' }
+    { 
+      key: 'scenarioName', 
+      header: 'اسم السيناريو',
+      cell: (item: KnowledgeAnalytics) => (
+        <span className="font-semibold text-gray-900 block max-w-xs truncate" title={item.scenarioName}>
+          {item.scenarioName}
+        </span>
+      )
+    },
+    { 
+      key: 'categoryName', 
+      header: 'التصنيف',
+      cell: (item: KnowledgeAnalytics) => (
+        <span className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+          {item.categoryName || 'غير مصنف'}
+        </span>
+      )
+    },
+    { 
+      key: 'usageCount', 
+      header: 'مرات الاستخدام',
+      cell: (item: KnowledgeAnalytics) => (
+        <span className="font-bold text-gray-800">{item.usageCount ?? 0}</span>
+      )
+    },
+    { 
+      key: 'avgSimilarityScore', 
+      header: 'متوسط التطابق',
+      cell: (item: KnowledgeAnalytics) => {
+        const score = Math.round((item.avgSimilarityScore ?? 0) * 100);
+        return (
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+            score >= 75 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+            score >= 40 ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+            'bg-gray-50 text-gray-600 border border-gray-200'
+          }`}>
+            {score}%
+          </span>
+        );
+      }
+    }
   ];
 
   const unansweredColumns = [
@@ -114,10 +210,30 @@ export const AnalyticsPage = () => {
         <MetricCard title="نسبة النجاح" value={`${((overview.successRate ?? 0) * 100).toFixed(1)}%`} color="text-[#0055b8]" />
       </div>
 
+      {/* Category Breakdown Section */}
+      <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-200/80 mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Layers className="w-5 h-5 text-[#0055b8]" />
+            <h3 className="text-xl font-bold text-slate-900">توزيع الاستفسارات حسب التصنيفات</h3>
+          </div>
+          <span className="text-xs text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
+            {categories.length} تصنيفات نشطة
+          </span>
+        </div>
+        <DataTable 
+          columns={categoryColumns} 
+          data={categories.map(c => ({ ...c, id: c.categoryId }))} 
+        />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-200/80">
-          <h3 className="text-xl font-bold mb-4 text-slate-900">إحصائيات المعرفة</h3>
-          <DataTable columns={knowledgeColumns} data={knowledge.map(k => ({ ...k, id: k.categoryId }))} />
+          <h3 className="text-xl font-bold mb-4 text-slate-900">إحصائيات السيناريوهات (المعرفة)</h3>
+          <DataTable 
+            columns={knowledgeColumns} 
+            data={knowledge.map(k => ({ ...k, id: k.scenarioId || k.id }))} 
+          />
         </div>
         
         <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-200/80">

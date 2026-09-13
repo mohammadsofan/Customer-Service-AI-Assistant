@@ -9,15 +9,18 @@ public class AnalyticsService : IAnalyticsService
 {
     private readonly ISupportQuestionRepository _questionRepository;
     private readonly IKnowledgeScenarioRepository _scenarioRepository;
+    private readonly IKnowledgeCategoryRepository _categoryRepository;
     private readonly IAIRequestLogRepository _requestLogRepository;
 
     public AnalyticsService(
         ISupportQuestionRepository questionRepository,
         IKnowledgeScenarioRepository scenarioRepository,
+        IKnowledgeCategoryRepository categoryRepository,
         IAIRequestLogRepository requestLogRepository)
     {
         _questionRepository = questionRepository;
         _scenarioRepository = scenarioRepository;
+        _categoryRepository = categoryRepository;
         _requestLogRepository = requestLogRepository;
     }
 
@@ -87,6 +90,7 @@ public class AnalyticsService : IAnalyticsService
             {
                 ScenarioId = s.Id,
                 ScenarioName = s.Name,
+                CategoryName = s.Category?.Name ?? "غير مصنف",
                 RetrievalCount = relatedQuestions.Count,
                 AvgSimilarityScore = relatedQuestions.Any(q => q.ConfidenceScore.HasValue) 
                     ? relatedQuestions.Where(q => q.ConfidenceScore.HasValue).Average(q => q.ConfidenceScore ?? 0) 
@@ -94,6 +98,48 @@ public class AnalyticsService : IAnalyticsService
                 LastUsed = relatedQuestions.OrderByDescending(q => q.CreatedAt).FirstOrDefault()?.CreatedAt
             };
         }).ToList();
+    }
+
+    public async Task<IEnumerable<CategoryAnalyticsDto>> GetCategoryAnalyticsAsync(CancellationToken cancellationToken = default)
+    {
+        var categories = (await _categoryRepository.GetAllAsync(cancellationToken)).ToList();
+        var (scenarios, _) = await _scenarioRepository.GetAllAsync(1, int.MaxValue, null, null, cancellationToken);
+        var (questions, _) = await _questionRepository.GetAllAsync(1, int.MaxValue, cancellationToken);
+        
+        var scenariosList = scenarios.ToList();
+        var questionsList = questions.ToList();
+        var totalWithScenario = questionsList.Count(q => q.ScenarioId.HasValue);
+        
+        var result = categories.Select(c =>
+        {
+            var catScenarioIds = scenariosList.Where(s => s.CategoryId == c.Id).Select(s => s.Id).ToHashSet();
+            var count = questionsList.Count(q => q.ScenarioId.HasValue && catScenarioIds.Contains(q.ScenarioId.Value));
+            return new CategoryAnalyticsDto
+            {
+                CategoryId = c.Id,
+                CategoryName = c.Name,
+                ScenarioCount = catScenarioIds.Count,
+                QuestionCount = count,
+                Percentage = totalWithScenario > 0 ? Math.Round((double)count / totalWithScenario * 100, 1) : 0
+            };
+        }).OrderByDescending(x => x.QuestionCount).ThenByDescending(x => x.ScenarioCount).ToList();
+
+        var knownCategoryIds = categories.Select(c => c.Id).ToHashSet();
+        var unassignedScenarios = scenariosList.Where(s => s.CategoryId == Guid.Empty || !knownCategoryIds.Contains(s.CategoryId)).Select(s => s.Id).ToHashSet();
+        if (unassignedScenarios.Count > 0)
+        {
+            var unassignedCount = questionsList.Count(q => q.ScenarioId.HasValue && unassignedScenarios.Contains(q.ScenarioId.Value));
+            result.Add(new CategoryAnalyticsDto
+            {
+                CategoryId = Guid.Empty,
+                CategoryName = "غير مصنف",
+                ScenarioCount = unassignedScenarios.Count,
+                QuestionCount = unassignedCount,
+                Percentage = totalWithScenario > 0 ? Math.Round((double)unassignedCount / totalWithScenario * 100, 1) : 0
+            });
+        }
+
+        return result;
     }
 
     public async Task<UnansweredAnalyticsDto> GetUnansweredAnalyticsAsync(CancellationToken cancellationToken = default)

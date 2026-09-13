@@ -83,6 +83,8 @@ public class EmbeddingBackgroundService : BackgroundService
 
         var pendingEmbeddings = await dbContext.KnowledgeEmbeddings
             .Include(e => e.Scenario)
+                .ThenInclude(s => s.Category)
+            .Include(e => e.Scenario)
                 .ThenInclude(s => s.ScenarioKeywords)
                     .ThenInclude(sk => sk.Keyword)
             .Include(e => e.Scenario)
@@ -105,6 +107,10 @@ public class EmbeddingBackgroundService : BackgroundService
                 // Concatenate content
                 var sb = new StringBuilder();
                 sb.AppendLine($"Title: {embedding.Scenario.Name}");
+                if (embedding.Scenario.Category != null && !string.IsNullOrWhiteSpace(embedding.Scenario.Category.Name))
+                {
+                    sb.AppendLine($"Category: {embedding.Scenario.Category.Name}");
+                }
                 sb.AppendLine($"Description: {embedding.Scenario.Description}");
                 
                 if (embedding.Scenario.ScenarioKeywords.Any())

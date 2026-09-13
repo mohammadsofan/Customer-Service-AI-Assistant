@@ -41,6 +41,14 @@ export interface KnowledgeAnalytics {
     avgSimilarityScore?: number;
 }
 
+export interface CategoryAnalytics {
+    categoryId: string;
+    categoryName: string;
+    scenarioCount: number;
+    questionCount: number;
+    percentage: number;
+}
+
 export interface UnansweredQuestion {
     id: string | number;
     question?: string;
@@ -98,11 +106,17 @@ const analyticsService = {
         return list.map((item: any) => ({
             id: item.scenarioId || item.categoryId || item.id,
             scenarioId: item.scenarioId,
-            scenarioName: item.scenarioName || item.categoryName || 'سيناريو عام',
-            categoryName: item.scenarioName || item.categoryName || 'سيناريو عام',
+            scenarioName: item.scenarioName || 'سيناريو عام',
+            categoryName: item.categoryName || 'غير مصنف',
             usageCount: item.retrievalCount ?? item.usageCount ?? 0,
             avgSimilarityScore: item.avgSimilarityScore ?? 0
         }));
+    },
+    getCategoryAnalytics: async (): Promise<CategoryAnalytics[]> => {
+        const response = await api.get<any>('/analytics/categories');
+        const data = response.data;
+        const list = Array.isArray(data) ? data : (data?.items || []);
+        return list;
     },
     getUnanswered: async (): Promise<UnansweredQuestion[]> => {
         const response = await api.get<any>('/analytics/unanswered');

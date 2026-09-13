@@ -47,4 +47,11 @@ public class AnalyticsController : ControllerBase
         var result = await _analyticsService.GetUnansweredAnalyticsAsync(cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("categories")]
+    public async Task<IActionResult> GetCategories(CancellationToken cancellationToken)
+    {
+        var result = await _analyticsService.GetCategoryAnalyticsAsync(cancellationToken);
+        return Ok(result);
+    }
 }
