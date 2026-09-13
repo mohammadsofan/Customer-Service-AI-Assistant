@@ -109,8 +109,13 @@ export function KeywordsPage() {
   };
 
   const columns = [
-    { key: 'id', header: 'المعرف' },
-    { key: 'word', header: 'الكلمة' },
+    { 
+      key: 'word', 
+      header: 'الكلمة المفتاحية',
+      cell: (item: Keyword) => (
+        <span className="font-medium text-gray-900 bg-gray-100 px-2.5 py-1 rounded text-sm">{item.word}</span>
+      )
+    },
     {
       key: 'actions',
       header: 'الإجراءات',

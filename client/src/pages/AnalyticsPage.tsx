@@ -37,16 +37,14 @@ export const AnalyticsPage = () => {
   if (!overview) return null;
 
   const knowledgeColumns = [
-    { key: 'categoryId', header: 'معرف الفئة' },
-    { key: 'categoryName', header: 'اسم الفئة' },
-    { key: 'usageCount', header: 'عدد الاستخدام' }
+    { key: 'categoryName', header: 'اسم التصنيف' },
+    { key: 'usageCount', header: 'مرات الاستخدام' }
   ];
 
   const unansweredColumns = [
-    { key: 'id', header: 'المعرف' },
-    { key: 'question', header: 'السؤال' },
+    { key: 'question', header: 'نص السؤال' },
     { key: 'timestamp', header: 'الوقت', cell: (item: UnansweredQuestion) => new Date(item.timestamp || Date.now()).toLocaleString('ar-EG') },
-    { key: 'employeeId', header: 'معرف الموظف', cell: (item: UnansweredQuestion) => item.employeeId || 'غير متوفر' }
+    { key: 'employeeId', header: 'الموظف', cell: (item: UnansweredQuestion) => item.employeeId || 'غير متوفر' }
   ];
 
   return (

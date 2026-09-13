@@ -56,8 +56,15 @@ export const QuestionsPage = () => {
   };
 
   const columns = [
-    { key: 'id', header: 'معرف السؤال' },
-    { key: 'questionText', header: 'النص' },
+    { 
+      key: 'questionText', 
+      header: 'نص السؤال',
+      cell: (item: QuestionHistoryDto) => (
+        <span className="font-medium text-gray-900 block max-w-md truncate" title={item.questionText}>
+          {item.questionText}
+        </span>
+      )
+    },
     { 
       key: 'employee', 
       header: 'الموظف',
@@ -169,12 +176,8 @@ export const QuestionsPage = () => {
               </div>
             </div>
             <div>
-              <strong className="block text-gray-700 mb-1">معرف السؤال:</strong>
-              <p className="font-mono text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-200 break-all">{selectedQuestion.id}</p>
-            </div>
-            <div>
               <strong className="block text-gray-700 mb-1">نص السؤال:</strong>
-              <p className="text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">{selectedQuestion.questionText}</p>
+              <p className="text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200 leading-relaxed">{selectedQuestion.questionText}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -199,6 +202,10 @@ export const QuestionsPage = () => {
             <div>
               <strong className="block text-gray-700 mb-1">تاريخ ووقت الإنشاء:</strong>
               <p className="text-sm text-gray-600">{new Date(selectedQuestion.createdAt).toLocaleString('ar-EG')}</p>
+            </div>
+            <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
+              <span>الرقم المرجعي الفني:</span>
+              <span className="font-mono text-gray-500 select-all">{selectedQuestion.id}</span>
             </div>
           </div>
         )}

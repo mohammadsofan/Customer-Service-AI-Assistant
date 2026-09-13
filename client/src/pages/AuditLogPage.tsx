@@ -47,10 +47,9 @@ export const AuditLogPage = () => {
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
 
   const columns = [
-    { key: 'id', header: 'المعرف' },
     { key: 'action', header: 'الإجراء' },
     { key: 'details', header: 'التفاصيل' },
-    { key: 'userId', header: 'معرف المستخدم' },
+    { key: 'userId', header: 'معرف المستخدم', cell: (item: AuditLog) => <span className="font-mono text-xs text-gray-500">{item.userId || '-'}</span> },
     { key: 'timestamp', header: 'الوقت', cell: (item: AuditLog) => new Date(item.timestamp).toLocaleString('ar-EG') }
   ];
 

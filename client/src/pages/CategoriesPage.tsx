@@ -121,8 +121,13 @@ export function CategoriesPage() {
   };
 
   const columns = [
-    { key: 'id', header: 'المعرف' },
-    { key: 'name', header: 'الاسم' },
+    { 
+      key: 'name', 
+      header: 'اسم التصنيف',
+      cell: (item: Category) => (
+        <span className="font-semibold text-gray-900">{item.name}</span>
+      )
+    },
     {
       key: 'actions',
       header: 'الإجراءات',
