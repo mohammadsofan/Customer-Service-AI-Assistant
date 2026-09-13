@@ -26,17 +26,21 @@ public class EmployeeService : IEmployeeService
 
     public async Task<PaginatedResponse<EmployeeListDto>> GetAllAsync(PaginatedRequest request, CancellationToken cancellationToken = default)
     {
-        var (items, totalCount) = await _userRepository.GetAllAsync(request.Page, request.PageSize, cancellationToken);
+        var (items, totalCount) = await _userRepository.GetAllAsync(
+            request.Page,
+            request.PageSize,
+            request.Search,
+            UserRole.Employee,
+            cancellationToken);
         
-        var employees = items.Where(u => u.Role == UserRole.Employee)
-            .Select(u => new EmployeeListDto
-            {
-                Id = u.Id,
-                Email = u.Email,
-                FullName = u.FullName,
-                IsActive = u.IsActive,
-                CreatedAt = u.CreatedAt
-            }).ToList();
+        var employees = items.Select(u => new EmployeeListDto
+        {
+            Id = u.Id,
+            Email = u.Email,
+            FullName = u.FullName,
+            IsActive = u.IsActive,
+            CreatedAt = u.CreatedAt
+        }).ToList();
 
         return new PaginatedResponse<EmployeeListDto>
         {

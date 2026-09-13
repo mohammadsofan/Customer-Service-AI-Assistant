@@ -1,3 +1,4 @@
+using AIEmployeeSupport.Application.DTOs.Common;
 using AIEmployeeSupport.Application.DTOs.Knowledge;
 
 namespace AIEmployeeSupport.Application.Interfaces.Services;
@@ -5,6 +6,7 @@ namespace AIEmployeeSupport.Application.Interfaces.Services;
 public interface IKeywordService
 {
     Task<IEnumerable<KeywordDto>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<PaginatedResponse<KeywordDto>> GetAllAsync(PaginatedRequest request, CancellationToken cancellationToken = default);
     Task<KeywordDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<IEnumerable<KeywordDto>> SearchAsync(string searchTerm, CancellationToken cancellationToken = default);
     Task<KeywordDto> CreateAsync(CreateKeywordRequest request, CancellationToken cancellationToken = default);

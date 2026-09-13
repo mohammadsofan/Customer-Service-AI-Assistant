@@ -51,6 +51,7 @@ public class AuditService : IAuditService
         var (items, totalCount) = await _auditLogRepository.GetAllAsync(
             request.Page,
             request.PageSize,
+            request.Search,
             userId,
             action,
             fromDate,

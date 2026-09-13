@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../components/Button';
 import { DataTable, type Column } from '../components/DataTable';
+import { SearchBox } from '../components/SearchBox';
 import { Modal } from '../components/Modal';
 import { Input } from '../components/Input';
 import { Select } from '../components/Select';
@@ -12,6 +13,11 @@ export function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
 
@@ -22,15 +28,19 @@ export function EmployeesPage() {
   const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
-    loadEmployees();
-  }, []);
+    const timer = setTimeout(() => {
+      loadEmployees(page, search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [page, search]);
 
-  const loadEmployees = async () => {
+  const loadEmployees = async (currentPage = page, currentSearch = search) => {
     try {
       setIsLoading(true);
-      const data = await employeeService.getEmployees();
-      // Add a mock isActive if not in DTO
-      setEmployees(data.map(e => ({ ...e, isActive: (e as any).isActive ?? true })));
+      const data = await employeeService.getEmployees(currentPage, 10, currentSearch);
+      setEmployees(data.items.map(e => ({ ...e, isActive: (e as any).isActive ?? true })));
+      setTotalPages(data.totalPages);
+      setTotalCount(data.totalCount);
     } catch (error) {
       toast.error('حدث خطأ أثناء تحميل الموظفين');
     } finally {
@@ -137,10 +147,27 @@ export function EmployeesPage() {
         <Button onClick={() => handleOpenModal()}>إضافة موظف جديد</Button>
       </div>
 
+      <div className="mb-4 max-w-md">
+        <SearchBox
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          placeholder="ابحث بالاسم أو البريد..."
+        />
+      </div>
+
       {isLoading ? (
         <div>جاري التحميل...</div>
       ) : (
-        <DataTable data={employees} columns={columns} />
+        <DataTable
+          data={employees}
+          columns={columns}
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
       )}
 
       <Modal

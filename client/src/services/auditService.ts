@@ -13,12 +13,29 @@ export interface AuditLog {
     timestamp: string;
 }
 
+export interface PaginatedAuditLogs {
+    items: AuditLog[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+}
+
 const auditService = {
-    getAuditLogs: async (): Promise<AuditLog[]> => {
-        const response = await api.get<any>('/audit/logs');
+    getAuditLogs: async (page = 1, pageSize = 15, search?: string): Promise<PaginatedAuditLogs> => {
+        const params: Record<string, any> = { page, pageSize };
+        if (search && search.trim()) {
+            params.search = search.trim();
+        }
+        const response = await api.get<any>('/audit/logs', { params });
         const data = response.data;
-        const list = Array.isArray(data) ? data : (data?.items || []);
-        return list.map((log: any) => ({
+        const rawList = Array.isArray(data) ? data : (data?.items || []);
+        const totalCount = typeof data?.totalCount === 'number' ? data.totalCount : rawList.length;
+        const totalPages = typeof data?.totalPages === 'number' 
+            ? data.totalPages 
+            : Math.max(1, Math.ceil(totalCount / pageSize));
+
+        const items = rawList.map((log: any) => ({
             id: log.id,
             action: log.action || 'عملية في النظام',
             details: log.metadata || log.details || (log.entityType ? `${log.entityType}: ${log.action}` : 'عملية في النظام'),
@@ -28,6 +45,14 @@ const auditService = {
             userRole: log.userRole,
             timestamp: log.timestamp || log.createdAt || new Date().toISOString()
         }));
+
+        return {
+            items,
+            totalCount,
+            page: data?.page || page,
+            pageSize: data?.pageSize || pageSize,
+            totalPages
+        };
     }
 };
 

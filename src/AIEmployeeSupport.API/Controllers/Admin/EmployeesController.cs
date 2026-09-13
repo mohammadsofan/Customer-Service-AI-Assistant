@@ -23,9 +23,11 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] PaginatedRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll([FromQuery] PaginatedRequest? request, CancellationToken cancellationToken)
     {
-        request ??= new PaginatedRequest { Page = 1, PageSize = 100 };
+        request ??= new PaginatedRequest();
+        if (request.Page <= 0) request.Page = 1;
+        if (request.PageSize <= 0) request.PageSize = 10;
         var result = await _employeeService.GetAllAsync(request, cancellationToken);
         return Ok(result);
     }

@@ -1,3 +1,4 @@
+using AIEmployeeSupport.Application.DTOs.Common;
 using AIEmployeeSupport.Application.DTOs.Knowledge;
 using AIEmployeeSupport.Application.Interfaces;
 using AIEmployeeSupport.Application.Interfaces.Services;
@@ -29,6 +30,30 @@ public class KeywordService : IKeywordService
             CreatedAt = k.CreatedAt,
             ScenarioCount = k.ScenarioKeywords?.Count ?? 0
         });
+    }
+
+    public async Task<PaginatedResponse<KeywordDto>> GetAllAsync(PaginatedRequest request, CancellationToken cancellationToken = default)
+    {
+        var page = request.Page <= 0 ? 1 : request.Page;
+        var pageSize = request.PageSize <= 0 ? 10 : request.PageSize;
+
+        var (items, totalCount) = await _keywordRepository.GetAllAsync(page, pageSize, request.Search, cancellationToken);
+
+        var dtos = items.Select(k => new KeywordDto
+        {
+            Id = k.Id,
+            Name = k.Name,
+            CreatedAt = k.CreatedAt,
+            ScenarioCount = k.ScenarioKeywords?.Count ?? 0
+        }).ToList();
+
+        return new PaginatedResponse<KeywordDto>
+        {
+            Items = dtos,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task<KeywordDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

@@ -5,17 +5,30 @@ export interface Employee extends User {
     department?: string;
 }
 
+export interface PaginatedEmployees {
+    items: Employee[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+}
+
 const employeeService = {
-    getEmployees: async (): Promise<Employee[]> => {
-        const response = await api.get<any>('/employees');
+    getEmployees: async (page = 1, pageSize = 10, search?: string): Promise<PaginatedEmployees> => {
+        const params: any = { page, pageSize };
+        if (search && search.trim()) params.search = search.trim();
+        const response = await api.get<any>('/employees', { params });
         const data = response.data;
         const list = Array.isArray(data) ? data : (data?.items || []);
-        return list.map((emp: any) => ({
+        const totalCount = data?.totalCount ?? list.length;
+        const totalPages = data?.totalPages ?? Math.max(1, Math.ceil(totalCount / pageSize));
+        const items = list.map((emp: any) => ({
             ...emp,
             username: emp.fullName || emp.username || emp.email,
             fullName: emp.fullName || emp.username || emp.email,
             department: emp.department || 'خدمة العملاء'
         }));
+        return { items, totalCount, page, pageSize, totalPages };
     },
     getEmployee: async (id: string): Promise<Employee> => {
         const response = await api.get<Employee>(`/employees/${id}`);

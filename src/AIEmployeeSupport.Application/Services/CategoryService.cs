@@ -1,3 +1,4 @@
+using AIEmployeeSupport.Application.DTOs.Common;
 using AIEmployeeSupport.Application.DTOs.Knowledge;
 using AIEmployeeSupport.Application.Interfaces;
 using AIEmployeeSupport.Application.Interfaces.Services;
@@ -30,6 +31,31 @@ public class CategoryService : ICategoryService
             IsActive = c.IsActive,
             ScenarioCount = c.Scenarios?.Count ?? 0
         });
+    }
+
+    public async Task<PaginatedResponse<CategoryDto>> GetAllAsync(PaginatedRequest request, CancellationToken cancellationToken = default)
+    {
+        var page = request.Page <= 0 ? 1 : request.Page;
+        var pageSize = request.PageSize <= 0 ? 10 : request.PageSize;
+
+        var (items, totalCount) = await _categoryRepository.GetAllAsync(page, pageSize, request.Search, cancellationToken);
+
+        var dtos = items.Select(c => new CategoryDto
+        {
+            Id = c.Id,
+            Name = c.Name,
+            Description = c.Description,
+            IsActive = c.IsActive,
+            ScenarioCount = c.Scenarios?.Count ?? 0
+        }).ToList();
+
+        return new PaginatedResponse<CategoryDto>
+        {
+            Items = dtos,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task<CategoryDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

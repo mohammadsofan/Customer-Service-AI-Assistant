@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../components/Button';
 import { DataTable } from '../components/DataTable';
+import { SearchBox } from '../components/SearchBox';
 import { Modal } from '../components/Modal';
 import { Input } from '../components/Input';
 import { LoadingState } from '../components/LoadingState';
@@ -15,6 +16,11 @@ export function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -44,14 +50,20 @@ export function CategoriesPage() {
   };
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchCategories(page, search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [page, search]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = async (currentPage = page, currentSearch = search) => {
     try {
       setLoading(true);
-      const data = await knowledgeService.getCategories();
-      setCategories(data);
+      const data = await knowledgeService.getPagedCategories(currentPage, 10, currentSearch);
+      setCategories(data.items);
+      setTotalPages(data.totalPages);
+      setTotalCount(data.totalCount);
+      setError(null);
     } catch (err) {
       setError('فشل في جلب التصنيفات.');
     } finally {
@@ -159,7 +171,24 @@ export function CategoriesPage() {
         </Button>
       </div>
 
-      <DataTable data={categories} columns={columns} />
+      <div className="max-w-md">
+        <SearchBox
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          placeholder="ابحث عن تصنيف..."
+        />
+      </div>
+
+      <DataTable
+        data={categories}
+        columns={columns}
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
 
       <Modal
         isOpen={isModalOpen}

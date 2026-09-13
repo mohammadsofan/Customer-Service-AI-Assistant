@@ -11,23 +11,32 @@ export const AuditLogPage = () => {
   const [error, setError] = useState<string | null>(null);
   
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [search, setSearch] = useState('');
   const pageSize = 15;
 
   useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        const data = await auditService.getAuditLogs();
-        setLogs(data);
-        setError(null);
-      } catch (err) {
-        setError('حدث خطأ أثناء تحميل سجل التدقيق');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchLogs();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchLogs(page, search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [page, search]);
+
+  const fetchLogs = async (currentPage = page, currentSearch = search) => {
+    try {
+      setLoading(true);
+      const data = await auditService.getAuditLogs(currentPage, pageSize, currentSearch);
+      setLogs(data.items);
+      setTotalPages(data.totalPages);
+      setTotalCount(data.totalCount);
+      setError(null);
+    } catch (err) {
+      setError('حدث خطأ أثناء تحميل سجل التدقيق');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const actionLabels: Record<string, { label: string; bg: string; text: string }> = {
     ScenarioCreated: { label: 'إنشاء سيناريو', bg: 'bg-emerald-100', text: 'text-emerald-800' },
@@ -43,24 +52,8 @@ export const AuditLogPage = () => {
     UserLoggedIn: { label: 'تسجيل دخول', bg: 'bg-green-100', text: 'text-green-800' }
   };
 
-  const filteredLogs = useMemo(() => {
-    if (!search) return logs;
-    const s = search.toLowerCase();
-    return logs.filter(log => 
-      log.action.toLowerCase().includes(s) || 
-      (log.details || '').toLowerCase().includes(s) || 
-      log.userName.toLowerCase().includes(s) ||
-      (log.userEmail || '').toLowerCase().includes(s)
-    );
-  }, [logs, search]);
-
-  const paginatedLogs = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredLogs.slice(start, start + pageSize);
-  }, [filteredLogs, page]);
-
-  if (loading) return <LoadingState />;
-  if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
+  if (loading && logs.length === 0) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={() => fetchLogs(1, '')} />;
 
   const columns = [
     { 
@@ -122,7 +115,7 @@ export const AuditLogPage = () => {
     <div className="p-6 rtl bg-gray-50 min-h-screen" dir="rtl">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">سجل التدقيق والأمان</h2>
-        <span className="text-sm text-gray-500 font-medium">إجمالي السجلات: {filteredLogs.length}</span>
+        <span className="text-sm text-gray-500 font-medium">إجمالي السجلات: {totalCount}</span>
       </div>
       
       <div className="mb-6 max-w-md">
@@ -139,9 +132,9 @@ export const AuditLogPage = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-100">
         <DataTable 
           columns={columns} 
-          data={paginatedLogs} 
+          data={logs} 
           currentPage={page}
-          totalPages={Math.max(1, Math.ceil(filteredLogs.length / pageSize))}
+          totalPages={totalPages}
           onPageChange={setPage}
         />
       </div>

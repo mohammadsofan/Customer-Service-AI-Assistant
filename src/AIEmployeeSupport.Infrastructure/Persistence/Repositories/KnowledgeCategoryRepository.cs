@@ -16,6 +16,26 @@ public class KnowledgeCategoryRepository : IKnowledgeCategoryRepository
     public async Task<IEnumerable<KnowledgeCategory>> GetAllAsync(CancellationToken cancellationToken = default)
         => await _context.KnowledgeCategories.AsNoTracking().OrderBy(c => c.Name).ToListAsync(cancellationToken);
 
+    public async Task<(IEnumerable<KnowledgeCategory> Items, int TotalCount)> GetAllAsync(
+        int page, int pageSize, string? searchTerm = null, CancellationToken cancellationToken = default)
+    {
+        var query = _context.KnowledgeCategories.AsNoTracking().Include(c => c.Scenarios).AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.Trim();
+            query = query.Where(c => c.Name.Contains(term) || (c.Description != null && c.Description.Contains(term)));
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query.OrderBy(c => c.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
     public async Task<KnowledgeCategory?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => await _context.KnowledgeCategories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 

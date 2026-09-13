@@ -16,6 +16,26 @@ public class KnowledgeKeywordRepository : IKnowledgeKeywordRepository
     public async Task<IEnumerable<KnowledgeKeyword>> GetAllAsync(CancellationToken cancellationToken = default)
         => await _context.KnowledgeKeywords.AsNoTracking().OrderBy(k => k.Name).ToListAsync(cancellationToken);
 
+    public async Task<(IEnumerable<KnowledgeKeyword> Items, int TotalCount)> GetAllAsync(
+        int page, int pageSize, string? searchTerm = null, CancellationToken cancellationToken = default)
+    {
+        var query = _context.KnowledgeKeywords.AsNoTracking().Include(k => k.ScenarioKeywords).AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.Trim();
+            query = query.Where(k => k.Name.Contains(term));
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query.OrderBy(k => k.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
     public async Task<KnowledgeKeyword?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => await _context.KnowledgeKeywords.AsNoTracking().FirstOrDefaultAsync(k => k.Id == id, cancellationToken);
 

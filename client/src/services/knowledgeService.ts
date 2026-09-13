@@ -1,5 +1,13 @@
 import api from './api';
 
+export interface PaginatedKnowledgeResponse<T> {
+    items: T[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+}
+
 export interface Category {
     id: string;
     name: string;
@@ -90,6 +98,27 @@ const knowledgeService = {
         const data = response.data;
         return Array.isArray(data) ? data : (data?.items || []);
     },
+    getPagedCategories: async (page = 1, pageSize = 10, search?: string): Promise<PaginatedKnowledgeResponse<Category>> => {
+        const params: Record<string, any> = { page, pageSize };
+        if (search && search.trim()) {
+            params.search = search.trim();
+        }
+        const response = await api.get<any>('/knowledge/categories', { params });
+        const data = response.data;
+        const list = Array.isArray(data) ? data : (data?.items || []);
+        const totalCount = typeof data?.totalCount === 'number' ? data.totalCount : list.length;
+        const totalPages = typeof data?.totalPages === 'number'
+            ? data.totalPages
+            : Math.max(1, Math.ceil(totalCount / pageSize));
+
+        return {
+            items: list,
+            totalCount,
+            page: data?.page || page,
+            pageSize: data?.pageSize || pageSize,
+            totalPages
+        };
+    },
     createCategory: async (category: Partial<Category>): Promise<Category> => {
         const response = await api.post<Category>('/knowledge/categories', category);
         return response.data;
@@ -111,6 +140,30 @@ const knowledgeService = {
             ...k,
             word: k.word || k.name
         }));
+    },
+    getPagedKeywords: async (page = 1, pageSize = 10, search?: string): Promise<PaginatedKnowledgeResponse<Keyword>> => {
+        const params: Record<string, any> = { page, pageSize };
+        if (search && search.trim()) {
+            params.search = search.trim();
+        }
+        const response = await api.get<any>('/knowledge/keywords', { params });
+        const data = response.data;
+        const list = Array.isArray(data) ? data : (data?.items || []);
+        const totalCount = typeof data?.totalCount === 'number' ? data.totalCount : list.length;
+        const totalPages = typeof data?.totalPages === 'number'
+            ? data.totalPages
+            : Math.max(1, Math.ceil(totalCount / pageSize));
+
+        return {
+            items: list.map((k: any) => ({
+                ...k,
+                word: k.word || k.name
+            })),
+            totalCount,
+            page: data?.page || page,
+            pageSize: data?.pageSize || pageSize,
+            totalPages
+        };
     },
     createKeyword: async (keyword: Partial<Keyword>): Promise<Keyword> => {
         const payload = {

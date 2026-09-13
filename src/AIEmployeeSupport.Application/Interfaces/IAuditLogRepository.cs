@@ -9,6 +9,7 @@ public interface IAuditLogRepository
     Task<(IEnumerable<AuditLog> Items, int TotalCount)> GetAllAsync(
         int page,
         int pageSize,
+        string? searchTerm = null,
         Guid? userId = null,
         AuditAction? action = null,
         DateTime? fromDate = null,

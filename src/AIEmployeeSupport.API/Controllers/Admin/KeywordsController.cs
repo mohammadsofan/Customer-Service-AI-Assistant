@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using AIEmployeeSupport.Application.DTOs.Common;
 using AIEmployeeSupport.Application.DTOs.Knowledge;
 using AIEmployeeSupport.Application.Interfaces.Services;
 
@@ -22,8 +23,15 @@ public class KeywordsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get(CancellationToken cancellationToken)
+    public async Task<IActionResult> Get([FromQuery] PaginatedRequest? request, CancellationToken cancellationToken)
     {
+        if (Request.Query.ContainsKey("page") || Request.Query.ContainsKey("search") || Request.Query.ContainsKey("pageSize"))
+        {
+            request ??= new PaginatedRequest();
+            var pagedResult = await _keywordService.GetAllAsync(request, cancellationToken);
+            return Ok(pagedResult);
+        }
+
         var result = await _keywordService.GetAllAsync(cancellationToken);
         return Ok(result);
     }

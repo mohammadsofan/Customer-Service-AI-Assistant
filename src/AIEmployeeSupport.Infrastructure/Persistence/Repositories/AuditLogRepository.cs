@@ -21,10 +21,16 @@ public class AuditLogRepository : IAuditLogRepository
     }
 
     public async Task<(IEnumerable<AuditLog> Items, int TotalCount)> GetAllAsync(
-        int page, int pageSize, Guid? userId = null, AuditAction? action = null,
+        int page, int pageSize, string? searchTerm = null, Guid? userId = null, AuditAction? action = null,
         DateTime? fromDate = null, DateTime? toDate = null, CancellationToken cancellationToken = default)
     {
         var query = _context.AuditLogs.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.Trim();
+            query = query.Where(a => a.EntityType.Contains(term) || (a.Metadata != null && a.Metadata.Contains(term)));
+        }
 
         if (userId.HasValue)
             query = query.Where(a => a.UserId == userId.Value);

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../components/Button';
 import { DataTable } from '../components/DataTable';
+import { SearchBox } from '../components/SearchBox';
 import { Modal } from '../components/Modal';
 import { Input } from '../components/Input';
 import { LoadingState } from '../components/LoadingState';
@@ -15,6 +16,11 @@ export function KeywordsPage() {
   const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [word, setWord] = useState('');
@@ -43,14 +49,20 @@ export function KeywordsPage() {
   };
 
   useEffect(() => {
-    fetchKeywords();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchKeywords(page, search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [page, search]);
 
-  const fetchKeywords = async () => {
+  const fetchKeywords = async (currentPage = page, currentSearch = search) => {
     try {
       setLoading(true);
-      const data = await knowledgeService.getKeywords();
-      setKeywords(data);
+      const data = await knowledgeService.getPagedKeywords(currentPage, 10, currentSearch);
+      setKeywords(data.items);
+      setTotalPages(data.totalPages);
+      setTotalCount(data.totalCount);
+      setError(null);
     } catch (err) {
       setError('فشل في جلب الكلمات المفتاحية.');
     } finally {
@@ -143,7 +155,24 @@ export function KeywordsPage() {
         </Button>
       </div>
 
-      <DataTable data={keywords} columns={columns} />
+      <div className="max-w-md">
+        <SearchBox
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          placeholder="ابحث عن كلمة مفتاحية..."
+        />
+      </div>
+
+      <DataTable
+        data={keywords}
+        columns={columns}
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
 
       <Modal
         isOpen={isModalOpen}
