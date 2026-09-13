@@ -93,8 +93,8 @@ export const EmployeeSupportPage: React.FC = () => {
     <div className="space-y-8" dir="rtl">
       {/* Hero Welcome */}
       <div className="text-center max-w-2xl mx-auto space-y-2 mb-2">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-xs font-bold text-blue-700">
-          <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#76bc21]/15 border border-[#76bc21]/30 text-xs font-bold text-[#3b6b0c]">
+          <Sparkles className="w-3.5 h-3.5 text-[#76bc21]" />
           <span>نظام الإجابات المعرفية الفورية (RAG)</span>
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -113,7 +113,7 @@ export const EmployeeSupportPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="flex items-center justify-between mb-1">
                 <label className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                  <HelpCircle className="w-4 h-4 text-blue-600" />
+                  <HelpCircle className="w-4 h-4 text-[#0055b8]" />
                   <span>نص المشكلة أو الاستفسار</span>
                 </label>
                 {flowState === 'NEW' && problem && (
@@ -137,7 +137,7 @@ export const EmployeeSupportPage: React.FC = () => {
                   className={`w-full p-4 rounded-xl text-slate-900 placeholder:text-slate-400 border transition-all text-sm leading-relaxed focus:outline-none ${
                     flowState !== 'NEW'
                       ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed'
-                      : 'bg-white border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'
+                      : 'bg-white border-slate-200 focus:border-[#76bc21] focus:ring-4 focus:ring-[#76bc21]/15'
                   }`}
                 />
               </div>
@@ -154,7 +154,7 @@ export const EmployeeSupportPage: React.FC = () => {
                         key={idx}
                         type="button"
                         onClick={() => selectSuggestion(s)}
-                        className="text-xs px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-blue-50 border border-slate-200/80 hover:border-blue-200 text-slate-700 hover:text-blue-700 transition-all cursor-pointer text-right flex items-center gap-1.5"
+                        className="text-xs px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-[#76bc21]/10 border border-slate-200/80 hover:border-[#76bc21]/40 text-slate-700 hover:text-[#3d6c0f] transition-all cursor-pointer text-right flex items-center gap-1.5"
                       >
                         <ChevronRight className="w-3 h-3 text-slate-400" />
                         <span>{s}</span>
@@ -170,7 +170,7 @@ export const EmployeeSupportPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={!problem.trim()}
-                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
+                    className="px-6 py-3 rounded-xl bg-[#76bc21] hover:bg-[#67a61d] active:bg-[#5b9419] text-white font-bold text-sm shadow-md shadow-[#76bc21]/25 hover:shadow-[#76bc21]/40 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
                   >
                     <span>إرسال</span>
                     <Send className="w-4 h-4 rotate-180" />
@@ -182,9 +182,9 @@ export const EmployeeSupportPage: React.FC = () => {
 
           {/* Processing / Thinking State */}
           {flowState === 'PROCESSING' && (
-            <div className="bg-white rounded-2xl border border-blue-100 shadow-lg shadow-blue-500/5 p-8 text-center space-y-4 animate-pulse">
-              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-inner">
-                <Bot className="w-8 h-8 animate-bounce" />
+            <div className="bg-white rounded-2xl border border-[#76bc21]/30 shadow-lg shadow-[#76bc21]/5 p-8 text-center space-y-4 animate-pulse">
+              <div className="w-14 h-14 rounded-2xl bg-[#76bc21]/10 text-[#76bc21] flex items-center justify-center mx-auto shadow-inner">
+                <Bot className="w-8 h-8 animate-bounce text-[#76bc21]" />
               </div>
               <div className="space-y-1">
                 <h3 className="text-base font-bold text-slate-900">
@@ -195,25 +195,25 @@ export const EmployeeSupportPage: React.FC = () => {
                 </p>
               </div>
               <div className="w-48 h-1.5 bg-slate-100 rounded-full mx-auto overflow-hidden">
-                <div className="w-full h-full bg-blue-600 rounded-full animate-[shimmer_1.5s_infinite]" />
+                <div className="w-full h-full bg-[#76bc21] rounded-full animate-[shimmer_1.5s_infinite]" />
               </div>
             </div>
           )}
 
           {/* Answered State (Success) */}
           {flowState === 'ANSWERED' && response && (
-            <div className="bg-white rounded-2xl border border-emerald-200/80 shadow-md shadow-emerald-500/5 p-6 sm:p-8 space-y-6">
+            <div className="bg-white rounded-2xl border border-[#76bc21]/40 shadow-md shadow-[#76bc21]/5 p-6 sm:p-8 space-y-6">
               {/* Header */}
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-[#76bc21]/15 text-[#3b680c] flex items-center justify-center">
                     <CheckCircle2 className="w-6 h-6" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">
                       الحل المعتمد من قاعدة المعرفة
                     </h3>
-                    <p className="text-xs text-emerald-600 font-medium">
+                    <p className="text-xs text-[#3b680c] font-medium">
                       تم التحقق والمطابقة بنجاح
                     </p>
                   </div>
@@ -222,7 +222,7 @@ export const EmployeeSupportPage: React.FC = () => {
                 {response.confidenceScore !== undefined && (
                   <div className="text-left">
                     <div className="text-xs text-slate-400">نسبة التطابق</div>
-                    <div className="text-sm font-bold text-emerald-600">
+                    <div className="text-sm font-bold text-[#3b680c]">
                       {(response.confidenceScore * 100).toFixed(0)}%
                     </div>
                   </div>
@@ -246,7 +246,7 @@ export const EmployeeSupportPage: React.FC = () => {
                         key={idx}
                         className="flex items-start gap-3 p-3.5 rounded-xl bg-white border border-slate-200/80 text-sm"
                       >
-                        <span className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="w-6 h-6 rounded-full bg-[#76bc21]/15 text-[#3b680c] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                           {idx + 1}
                         </span>
                         <span className="text-slate-700 leading-relaxed">{step}</span>
@@ -269,7 +269,7 @@ export const EmployeeSupportPage: React.FC = () => {
               <div className="pt-2">
                 <button
                   onClick={handleReset}
-                  className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:shadow"
+                  className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-[#76bc21] hover:text-white text-white font-bold text-sm transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:shadow"
                 >
                   <RotateCcw className="w-4 h-4" />
                   <span>بدء سؤال جديد</span>
@@ -312,7 +312,7 @@ export const EmployeeSupportPage: React.FC = () => {
               <div className="pt-2">
                 <button
                   onClick={handleReset}
-                  className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+                  className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-[#76bc21] hover:text-white text-white font-bold text-sm transition-all flex items-center gap-2 cursor-pointer shadow-sm"
                 >
                   <RotateCcw className="w-4 h-4" />
                   <span>بدء سؤال جديد</span>
@@ -337,7 +337,7 @@ export const EmployeeSupportPage: React.FC = () => {
               <div className="pt-2">
                 <button
                   onClick={handleReset}
-                  className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition-all flex items-center gap-2 cursor-pointer"
+                  className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-[#76bc21] hover:text-white text-white font-bold text-sm transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <RotateCcw className="w-4 h-4" />
                   <span>المحاولة مرة أخرى</span>
@@ -353,13 +353,13 @@ export const EmployeeSupportPage: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <History className="w-4 h-4 text-blue-600" />
+                <History className="w-4 h-4 text-[#0055b8]" />
                 <span>سجل استفساراتك الأخيرة</span>
               </h3>
               <button
                 onClick={fetchHistory}
                 disabled={isHistoryLoading}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+                className="text-xs text-[#0055b8] hover:text-[#004699] font-medium cursor-pointer"
               >
                 تحديث
               </button>
@@ -374,7 +374,7 @@ export const EmployeeSupportPage: React.FC = () => {
                 {history.map((item) => (
                   <div
                     key={item.id}
-                    className="p-3 rounded-xl bg-slate-50/70 border border-slate-200/60 text-xs space-y-1.5 hover:border-blue-200 transition-colors"
+                    className="p-3 rounded-xl bg-slate-50/70 border border-slate-200/60 text-xs space-y-1.5 hover:border-[#76bc21]/50 transition-colors"
                   >
                     <div className="font-semibold text-slate-800 line-clamp-2">
                       {item.questionText}
@@ -387,8 +387,8 @@ export const EmployeeSupportPage: React.FC = () => {
                       <span
                         className={`px-2 py-0.5 rounded-full font-bold ${
                           item.status === 'Answered'
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-amber-50 text-amber-700'
+                            ? 'bg-[#76bc21]/15 text-[#3b680c]'
+                            : 'bg-[#f4771d]/15 text-[#b34f07]'
                         }`}
                       >
                         {item.status === 'Answered' ? 'تمت الإجابة' : 'تم التصعيد'}
@@ -401,15 +401,15 @@ export const EmployeeSupportPage: React.FC = () => {
           </div>
 
           {/* Quick Guide card */}
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50/60 border border-blue-100 text-xs text-slate-700 space-y-2.5">
-            <div className="font-bold text-blue-950 flex items-center gap-1.5 text-sm">
-              <Bot className="w-4 h-4 text-blue-600" />
+          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs text-xs text-slate-700 space-y-2.5">
+            <div className="font-bold text-slate-900 flex items-center gap-1.5 text-sm">
+              <Bot className="w-4 h-4 text-[#76bc21]" />
               <span>تعليمات استخدام المساعد</span>
             </div>
             <p className="text-slate-600 leading-relaxed">
               يقوم المساعد بمقارنة سؤالك بدقة مع سيناريوهات الدعم المعتمدة لتقديم إجابة موحدة وموثوقة لكافة موظفي خدمة العملاء.
             </p>
-            <div className="pt-1 text-[11px] text-blue-700 font-semibold">
+            <div className="pt-1 text-[11px] text-[#0055b8] font-semibold">
               إذا لم تكن المعرفة متوفرة، فسيتم توجيهك فوراً للتصعيد دون أي تكهنات أو معلومات خاطئة.
             </div>
           </div>

@@ -72,18 +72,18 @@ export const AdminDashboard = () => {
   return (
     <div className="space-y-8" dir="rtl">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-900 text-white p-8 shadow-xl shadow-blue-950/10">
-        <div className="absolute top-0 left-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-[#002f6c] to-slate-900 text-white p-8 shadow-xl shadow-black/10 border border-slate-800/80">
+        <div className="absolute top-0 left-0 w-80 h-80 bg-[#76bc21]/15 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-semibold backdrop-blur-md">
-              <Sparkles className="w-3.5 h-3.5 text-blue-200" />
-              <span>نظام الدعم الذاتي نشط ومحدث</span>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 border border-[#76bc21]/40 text-xs font-semibold backdrop-blur-md text-white">
+              <span className="w-2 h-2 rounded-full bg-[#76bc21] animate-pulse" />
+              <span>نظام الدعم المعرفي نشط ومحدث</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               لوحة التحكم والإحصائيات
             </h1>
-            <p className="text-blue-100/90 text-sm max-w-xl leading-relaxed">
+            <p className="text-slate-300 text-sm max-w-xl leading-relaxed">
               متابعة استفسارات الموظفين، أداء نماذج الذكاء الاصطناعي، ودقة استرجاع سيناريوهات قاعدة المعرفة بشكل لحظي.
             </p>
           </div>
@@ -91,7 +91,7 @@ export const AdminDashboard = () => {
           <div className="flex items-center gap-3">
             <Link
               to="/admin/knowledge/create"
-              className="px-5 py-3 rounded-xl bg-white text-blue-800 hover:bg-blue-50 font-bold text-sm shadow-md transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+              className="px-5 py-3 rounded-xl bg-[#76bc21] hover:bg-[#67a61d] text-white font-bold text-sm shadow-md shadow-[#76bc21]/25 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
             >
               <BookPlus className="w-4 h-4" />
               <span>إضافة سيناريو جديد</span>
@@ -207,14 +207,14 @@ interface StatCardProps {
 }
 
 const colorStyles = {
-  blue: 'bg-blue-50 text-blue-600 border-blue-100',
+  blue: 'bg-[#0055b8]/10 text-[#0055b8] border-[#0055b8]/20',
   amber: 'bg-amber-50 text-amber-600 border-amber-100',
-  emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+  emerald: 'bg-[#76bc21]/15 text-[#3b680c] border-[#76bc21]/30',
   rose: 'bg-rose-50 text-rose-600 border-rose-100',
-  indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+  indigo: 'bg-[#0055b8]/10 text-[#0055b8] border-[#0055b8]/20',
   violet: 'bg-violet-50 text-violet-600 border-violet-100',
-  orange: 'bg-orange-50 text-orange-600 border-orange-100',
-  cyan: 'bg-cyan-50 text-cyan-600 border-cyan-100',
+  orange: 'bg-[#f4771d]/15 text-[#b34f07] border-[#f4771d]/30',
+  cyan: 'bg-[#76bc21]/15 text-[#3b680c] border-[#76bc21]/30',
 };
 
 const StatCard = ({ title, value, subtitle, icon: Icon, color }: StatCardProps) => (
@@ -237,20 +237,20 @@ const StatCard = ({ title, value, subtitle, icon: Icon, color }: StatCardProps) 
 const QuickActionCard = ({ title, desc, icon: Icon, to }: any) => (
   <Link
     to={to}
-    className="group p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-lg hover:border-blue-200 transition-all duration-200 flex flex-col justify-between"
+    className="group p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-lg hover:border-[#76bc21]/50 transition-all duration-200 flex flex-col justify-between"
   >
     <div className="space-y-3">
-      <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+      <div className="w-12 h-12 rounded-xl bg-slate-50 text-[#0055b8] border border-slate-200/60 flex items-center justify-center group-hover:bg-[#76bc21] group-hover:text-white group-hover:border-[#76bc21] transition-colors">
         <Icon className="w-6 h-6" />
       </div>
-      <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+      <h4 className="text-base font-bold text-slate-900 group-hover:text-[#3b680c] transition-colors">
         {title}
       </h4>
       <p className="text-xs text-slate-500 leading-relaxed">
         {desc}
       </p>
     </div>
-    <div className="mt-5 flex items-center text-xs font-semibold text-blue-600 gap-1 group-hover:gap-2 transition-all">
+    <div className="mt-5 flex items-center text-xs font-semibold text-[#0055b8] group-hover:text-[#3b680c] gap-1 group-hover:gap-2 transition-all">
       <span>الانتقال للإدارة</span>
       <ArrowUpRight className="w-4 h-4" />
     </div>

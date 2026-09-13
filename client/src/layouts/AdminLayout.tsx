@@ -57,20 +57,20 @@ export const AdminLayout = () => {
   const currentItem = allItems.find(item => item.path === location.pathname);
 
   return (
-    <div dir="rtl" className="flex h-screen bg-slate-100/70 font-sans overflow-hidden">
+    <div dir="rtl" className="flex h-screen bg-[#f5f5f7] font-sans overflow-hidden">
       {/* Sidebar */}
       <aside className="w-72 bg-slate-900 text-slate-300 flex flex-col shadow-2xl z-20 border-l border-slate-800">
         {/* Brand Header */}
         <div className="h-20 px-6 flex items-center gap-3.5 border-b border-slate-800/80 bg-slate-950/40">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
-            <Bot className="w-6 h-6" />
+          <div className="w-11 h-11 rounded-xl bg-white border border-slate-700 shadow-md p-1.5 flex items-center justify-center shrink-0">
+            <img src="/brand/emblem.png" alt="Emblem" className="w-full h-full object-contain rounded-lg" />
           </div>
           <div>
             <h1 className="font-bold text-base text-white tracking-tight flex items-center gap-1.5">
               <span>مساعد الدعم الذكي</span>
             </h1>
-            <span className="text-xs text-blue-400 font-medium flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+            <span className="text-xs text-[#76bc21] font-medium flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#76bc21] animate-pulse" />
               لوحة الإدارة المركزية
             </span>
           </div>
@@ -92,7 +92,7 @@ export const AdminLayout = () => {
                     to={item.path}
                     className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                       isActive
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 font-semibold'
+                        ? 'bg-[#76bc21] text-white shadow-md shadow-[#76bc21]/25 font-semibold'
                         : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                     }`}
                   >
@@ -109,7 +109,7 @@ export const AdminLayout = () => {
         <div className="p-4 border-t border-slate-800/80 bg-slate-950/50">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-9 h-9 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 flex items-center justify-center font-bold text-sm shrink-0">
+              <div className="w-9 h-9 rounded-full bg-[#76bc21]/20 border border-[#76bc21]/40 text-[#76bc21] flex items-center justify-center font-bold text-sm shrink-0">
                 {(user?.fullName || user?.email || 'M')[0].toUpperCase()}
               </div>
               <div className="overflow-hidden">
@@ -147,14 +147,14 @@ export const AdminLayout = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#76bc21]/10 border border-[#76bc21]/30 text-xs font-semibold text-[#3b6b0c]">
+              <span className="w-2 h-2 rounded-full bg-[#76bc21] animate-pulse" />
               <span>النظام متصل ونشط</span>
             </div>
 
             <Link
               to="/support"
-              className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 hover:bg-[#76bc21]/5 hover:border-[#76bc21]/60 hover:text-[#4d8112] transition-colors flex items-center gap-1.5"
             >
               <span>بوابة الموظف</span>
             </Link>

@@ -13,21 +13,21 @@ export const EmployeeLayout = () => {
           <div className="flex justify-between h-18 items-center">
             {/* Brand */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
-                <Bot className="w-6 h-6" />
+              <div className="w-11 h-11 rounded-xl bg-white border border-slate-200/80 shadow-sm p-1.5 flex items-center justify-center shrink-0">
+                <img src="/brand/emblem.png" alt="Emblem" className="w-full h-full object-contain rounded-lg" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-base font-bold text-slate-900 tracking-tight">
                     مساعد خدمة العملاء
                   </h1>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200/60 text-[11px] font-semibold text-blue-700">
-                    <Sparkles className="w-3 h-3" />
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#76bc21]/15 border border-[#76bc21]/30 text-[11px] font-semibold text-[#3a690d]">
+                    <Sparkles className="w-3 h-3 text-[#76bc21]" />
                     <span>الذكاء الاصطناعي</span>
                   </span>
                 </div>
                 <p className="text-xs text-slate-400">
-                  بوابة دعم الموظفين والرد الآلي
+                  بوابة دعم الموظفين والرد المعرفي الفوري
                 </p>
               </div>
             </div>
@@ -39,14 +39,14 @@ export const EmployeeLayout = () => {
                   to="/admin"
                   className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
                 >
-                  <Shield className="w-3.5 h-3.5 text-blue-600" />
+                  <Shield className="w-3.5 h-3.5 text-[#0055b8]" />
                   <span>لوحة الإدارة</span>
                 </Link>
               )}
 
               {/* User Chip */}
               <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/70">
-                <div className="w-7 h-7 rounded-lg bg-blue-600/10 text-blue-700 flex items-center justify-center font-bold text-xs">
+                <div className="w-7 h-7 rounded-lg bg-[#76bc21]/15 text-[#3d6e0e] flex items-center justify-center font-bold text-xs">
                   <UserIcon className="w-4 h-4" />
                 </div>
                 <div className="text-right">

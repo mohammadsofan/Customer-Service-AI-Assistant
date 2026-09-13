@@ -27,9 +27,9 @@ export function DataTable<T extends { id?: string | number }>({
 }: DataTableProps<T>) {
   return (
     <div className={cn('w-full flex flex-col gap-4', className)} dir="rtl">
-      <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-xs">
         <table className="w-full text-right text-sm text-gray-600">
-          <thead className="border-b border-gray-200 bg-gray-50 text-gray-900">
+          <thead className="border-b border-slate-200/80 bg-slate-50/80 text-slate-900 font-semibold">
             <tr>
               {columns.map((col) => (
                 <th key={col.key} className="px-4 py-3 font-medium">
