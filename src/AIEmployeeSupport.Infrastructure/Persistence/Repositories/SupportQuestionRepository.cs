@@ -46,16 +46,36 @@ public class SupportQuestionRepository : ISupportQuestionRepository
         return (items, totalCount);
     }
 
-    public async Task<(IEnumerable<SupportQuestion> Items, int TotalCount)> GetAllAsync(
+    public Task<(IEnumerable<SupportQuestion> Items, int TotalCount)> GetAllAsync(
         int page, int pageSize, CancellationToken cancellationToken = default)
+        => GetAllAsync(page, pageSize, null, null, cancellationToken);
+
+    public async Task<(IEnumerable<SupportQuestion> Items, int TotalCount)> GetAllAsync(
+        int page, int pageSize, QuestionStatus? status, DateTime? date, CancellationToken cancellationToken = default)
     {
         var query = _context.SupportQuestions.AsNoTracking()
-            .Include(q => q.Employee);
+            .Include(q => q.Employee)
+            .Include(q => q.Scenario)
+            .AsQueryable();
+
+        if (status.HasValue)
+        {
+            query = query.Where(q => q.Status == status.Value);
+        }
+
+        if (date.HasValue)
+        {
+            var targetDate = date.Value.Date;
+            var nextDate = targetDate.AddDays(1);
+            query = query.Where(q => q.CreatedAt >= targetDate && q.CreatedAt < nextDate);
+        }
+
         var totalCount = await query.CountAsync(cancellationToken);
         var items = await query.OrderByDescending(q => q.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
+
         return (items, totalCount);
     }
 

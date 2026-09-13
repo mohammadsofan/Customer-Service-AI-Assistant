@@ -51,7 +51,17 @@ const supportService = {
         return response.data;
     },
     getAllQuestions: async (params: PaginatedRequest & { status?: string, date?: string }): Promise<PaginatedResponse<QuestionHistoryDto>> => {
-        const response = await api.get<PaginatedResponse<QuestionHistoryDto>>('/admin/questions', { params });
+        const queryParams: Record<string, any> = {
+            page: params.page,
+            pageSize: params.pageSize
+        };
+        if (params.status && params.status.trim() !== '') {
+            queryParams.status = params.status;
+        }
+        if (params.date && params.date.trim() !== '') {
+            queryParams.date = params.date;
+        }
+        const response = await api.get<PaginatedResponse<QuestionHistoryDto>>('/admin/questions', { params: queryParams });
         return response.data;
     }
 };

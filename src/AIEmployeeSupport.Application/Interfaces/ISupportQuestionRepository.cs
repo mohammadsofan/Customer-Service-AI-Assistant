@@ -16,5 +16,11 @@ public interface ISupportQuestionRepository
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
+    Task<(IEnumerable<SupportQuestion> Items, int TotalCount)> GetAllAsync(
+        int page,
+        int pageSize,
+        Domain.Enums.QuestionStatus? status,
+        DateTime? date,
+        CancellationToken cancellationToken = default);
     Task<IEnumerable<SupportQuestion>> GetUnansweredAsync(CancellationToken cancellationToken = default);
 }

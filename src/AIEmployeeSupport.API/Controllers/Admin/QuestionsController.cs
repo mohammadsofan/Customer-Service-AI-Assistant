@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using AIEmployeeSupport.Application.DTOs.Common;
 using AIEmployeeSupport.Application.DTOs.Support;
 using AIEmployeeSupport.Application.Interfaces;
+using AIEmployeeSupport.Domain.Enums;
 
 namespace AIEmployeeSupport.API.Controllers.Admin;
 
@@ -23,10 +24,27 @@ public class QuestionsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] PaginatedRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] PaginatedRequest request,
+        [FromQuery] string? status = null,
+        [FromQuery] string? date = null,
+        CancellationToken cancellationToken = default)
     {
         request ??= new PaginatedRequest { Page = 1, PageSize = 10 };
-        var (items, totalCount) = await _questionRepository.GetAllAsync(request.Page, request.PageSize, cancellationToken);
+
+        QuestionStatus? statusEnum = null;
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<QuestionStatus>(status, true, out var parsedStatus))
+        {
+            statusEnum = parsedStatus;
+        }
+
+        DateTime? parsedDate = null;
+        if (!string.IsNullOrWhiteSpace(date) && DateTime.TryParse(date, out var dt))
+        {
+            parsedDate = dt;
+        }
+
+        var (items, totalCount) = await _questionRepository.GetAllAsync(request.Page, request.PageSize, statusEnum, parsedDate, cancellationToken);
         var dtos = items.Select(q => new QuestionHistoryDto
         {
             Id = q.Id,
