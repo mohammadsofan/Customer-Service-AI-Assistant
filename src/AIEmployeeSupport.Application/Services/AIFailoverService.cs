@@ -61,37 +61,70 @@ public class AIFailoverService : IAIFailoverService
 
             var client = _providerFactory.CreateClient(provider.ProviderType, apiKey, provider.BaseUrl);
 
-            var modelToUse = (provider.Id == config.ActiveProviderId && config.ActiveModel != null)
-                ? config.ActiveModel.ModelName
-                : (provider.Models?.FirstOrDefault(m => m.IsActive)?.ModelName ?? request.ModelName);
+            // Determine models to try for this provider
+            var candidateModels = new List<string>();
 
-            var reqForProvider = new AIRequest
+            if (provider.Id == config.ActiveProviderId && config.ActiveModel != null)
             {
-                QuestionText = request.QuestionText,
-                RetrievedKnowledge = request.RetrievedKnowledge,
-                SystemPrompt = request.SystemPrompt,
-                Temperature = request.Temperature,
-                MaxTokens = request.MaxTokens,
-                ModelName = modelToUse
-            };
+                // Primary active model first
+                candidateModels.Add(config.ActiveModel.ModelName);
 
-            try
-            {
-                var response = await client.GenerateAnswerAsync(reqForProvider, token);
-                return response;
-            }
-            catch (Exception ex)
-            {
-                lastException = ex;
-                if (!config.EnableAutoFailover)
+                // Followed by other active models for this provider
+                if (provider.Models != null)
                 {
-                    throw; // Auto failover is disabled
+                    var fallbackModels = provider.Models
+                        .Where(m => m.IsActive && m.Id != config.ActiveModelId)
+                        .Select(m => m.ModelName)
+                        .Distinct();
+                    candidateModels.AddRange(fallbackModels);
                 }
+            }
+            else if (provider.Models != null && provider.Models.Any(m => m.IsActive))
+            {
+                candidateModels.AddRange(provider.Models.Where(m => m.IsActive).Select(m => m.ModelName).Distinct());
+            }
 
-                await _auditService.LogAsync(Guid.Empty, AuditAction.AIProviderFailoverTriggered, "AIProvider", provider.Id, $"Failed with {ex.Message}. Falling back to next priority.", token);
+            if (!candidateModels.Any())
+            {
+                candidateModels.Add(request.ModelName);
+            }
+
+            foreach (var modelToUse in candidateModels)
+            {
+                var reqForModel = new AIRequest
+                {
+                    QuestionText = request.QuestionText,
+                    RetrievedKnowledge = request.RetrievedKnowledge,
+                    SystemPrompt = request.SystemPrompt,
+                    Temperature = request.Temperature,
+                    MaxTokens = request.MaxTokens,
+                    ModelName = modelToUse
+                };
+
+                try
+                {
+                    var response = await client.GenerateAnswerAsync(reqForModel, token);
+                    return response;
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    if (!config.EnableAutoFailover)
+                    {
+                        throw; // Auto failover is disabled
+                    }
+
+                    await _auditService.LogAsync(
+                        Guid.Empty,
+                        AuditAction.AIProviderFailoverTriggered,
+                        "AIModel",
+                        provider.Id,
+                        $"Model '{modelToUse}' on provider '{provider.Name}' failed: {ex.Message}. Falling back to next available model/provider.",
+                        token);
+                }
             }
         }
 
-        throw new InvalidOperationException("All AI providers failed.", lastException);
+        throw new InvalidOperationException("All AI providers and models failed.", lastException);
     }
 }
