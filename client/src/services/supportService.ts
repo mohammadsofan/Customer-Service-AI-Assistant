@@ -33,6 +33,13 @@ export interface QuestionHistoryDto {
     completedAt?: string;
 }
 
+export interface TopScenarioDto {
+    id: string;
+    name: string;
+    description: string;
+    usageCount: number;
+}
+
 export interface PaginatedResponse<T> {
     items: T[];
     totalCount: number;
@@ -65,6 +72,10 @@ const supportService = {
             queryParams.date = params.date;
         }
         const response = await api.get<PaginatedResponse<QuestionHistoryDto>>('/admin/questions', { params: queryParams });
+        return response.data;
+    },
+    getTopScenarios: async (count: number = 5): Promise<TopScenarioDto[]> => {
+        const response = await api.get<TopScenarioDto[]>('/support/questions/top-scenarios', { params: { count } });
         return response.data;
     }
 };

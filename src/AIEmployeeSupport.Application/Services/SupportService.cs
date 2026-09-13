@@ -2,6 +2,7 @@ using AIEmployeeSupport.Application.DTOs.Common;
 using AIEmployeeSupport.Application.DTOs.Support;
 using AIEmployeeSupport.Application.Interfaces;
 using AIEmployeeSupport.Application.Interfaces.Services;
+using AIEmployeeSupport.Domain.Enums;
 
 namespace AIEmployeeSupport.Application.Services;
 
@@ -9,11 +10,16 @@ public class SupportService : ISupportService
 {
     private readonly IRAGService _ragService;
     private readonly ISupportQuestionRepository _questionRepository;
+    private readonly IKnowledgeScenarioRepository _scenarioRepository;
 
-    public SupportService(IRAGService ragService, ISupportQuestionRepository questionRepository)
+    public SupportService(
+        IRAGService ragService,
+        ISupportQuestionRepository questionRepository,
+        IKnowledgeScenarioRepository scenarioRepository)
     {
         _ragService = ragService;
         _questionRepository = questionRepository;
+        _scenarioRepository = scenarioRepository;
     }
 
     public async Task<QuestionResponse> SubmitQuestionAsync(Guid employeeId, SubmitQuestionRequest request, CancellationToken cancellationToken = default)
@@ -65,5 +71,29 @@ public class SupportService : ISupportService
             Page = request.Page,
             PageSize = request.PageSize
         };
+    }
+
+    public async Task<IEnumerable<TopScenarioDto>> GetTopScenariosAsync(int count = 5, CancellationToken cancellationToken = default)
+    {
+        var (scenarios, _) = await _scenarioRepository.GetAllAsync(1, int.MaxValue, ScenarioStatus.Active, null, cancellationToken);
+        var (allQuestions, _) = await _questionRepository.GetAllAsync(1, int.MaxValue, cancellationToken);
+
+        var scenarioUsage = allQuestions
+            .Where(q => q.ScenarioId.HasValue)
+            .GroupBy(q => q.ScenarioId!.Value)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        return scenarios
+            .Select(s => new TopScenarioDto
+            {
+                Id = s.Id,
+                Name = s.Name,
+                Description = s.Description,
+                UsageCount = scenarioUsage.TryGetValue(s.Id, out var usage) ? usage : 0
+            })
+            .OrderByDescending(s => s.UsageCount)
+            .ThenBy(s => s.Name)
+            .Take(count)
+            .ToList();
     }
 }

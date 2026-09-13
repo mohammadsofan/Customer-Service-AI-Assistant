@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import supportService, { type QuestionResponse, type QuestionHistoryDto } from '../services/supportService';
+import supportService, { type QuestionResponse, type QuestionHistoryDto, type TopScenarioDto } from '../services/supportService';
 import { 
   Bot, 
   Send, 
@@ -34,6 +34,7 @@ export const EmployeeSupportPage: React.FC = () => {
   const [error, setError] = useState('');
   const [history, setHistory] = useState<QuestionHistoryDto[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [topScenarios, setTopScenarios] = useState<TopScenarioDto[]>([]);
 
   const fetchHistory = async () => {
     try {
@@ -47,8 +48,20 @@ export const EmployeeSupportPage: React.FC = () => {
     }
   };
 
+  const fetchTopScenarios = async () => {
+    try {
+      const data = await supportService.getTopScenarios(5);
+      if (data && data.length > 0) {
+        setTopScenarios(data);
+      }
+    } catch {
+      // Top scenarios is non-blocking
+    }
+  };
+
   useEffect(() => {
     fetchHistory();
+    fetchTopScenarios();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,6 +83,7 @@ export const EmployeeSupportPage: React.FC = () => {
         setFlowState('ANSWERED');
       }
       fetchHistory();
+      fetchTopScenarios();
     } catch (err: any) {
       setFlowState('FAILED');
       setError('حدث خطأ أثناء معالجة السؤال بواسطة النظام. يرجى المحاولة لاحقاً.');
@@ -144,22 +158,47 @@ export const EmployeeSupportPage: React.FC = () => {
 
               {/* Quick suggestions when input is empty */}
               {flowState === 'NEW' && !problem && (
-                <div className="space-y-2 pt-1">
-                  <div className="text-xs font-semibold text-slate-400">
-                    أمثلة شائعة للاختيار السريع:
+                <div className="space-y-2.5 pt-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#76bc21]" />
+                      <span>أمثلة شائعة للاختيار السريع:</span>
+                      <span className="text-[11px] font-normal text-slate-400">(السيناريوهات الأكثر استخداماً)</span>
+                    </span>
+                    <span className="text-[11px] text-slate-400">انقر لتعبئة السؤال</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {quickSuggestions.map((s, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => selectSuggestion(s)}
-                        className="text-xs px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-[#76bc21]/10 border border-slate-200/80 hover:border-[#76bc21]/40 text-slate-700 hover:text-[#3d6c0f] transition-all cursor-pointer text-right flex items-center gap-1.5"
-                      >
-                        <ChevronRight className="w-3 h-3 text-slate-400" />
-                        <span>{s}</span>
-                      </button>
-                    ))}
+                    {topScenarios.length > 0 ? (
+                      topScenarios.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => selectSuggestion(item.name)}
+                          className="group text-xs px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-[#76bc21]/10 border border-slate-200/80 hover:border-[#76bc21]/40 text-slate-700 hover:text-[#3d6c0f] transition-all cursor-pointer text-right flex items-center gap-2 shadow-2xs hover:shadow-xs"
+                          title={item.description || item.name}
+                        >
+                          <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#76bc21] group-hover:-translate-x-0.5 transition-transform" />
+                          <span className="font-medium">{item.name}</span>
+                          {item.usageCount > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-200/70 text-slate-600 group-hover:bg-[#76bc21]/20 group-hover:text-[#3d6c0f] transition-colors">
+                              {item.usageCount} طلب
+                            </span>
+                          )}
+                        </button>
+                      ))
+                    ) : (
+                      quickSuggestions.map((s, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => selectSuggestion(s)}
+                          className="text-xs px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-[#76bc21]/10 border border-slate-200/80 hover:border-[#76bc21]/40 text-slate-700 hover:text-[#3d6c0f] transition-all cursor-pointer text-right flex items-center gap-1.5"
+                        >
+                          <ChevronRight className="w-3 h-3 text-slate-400" />
+                          <span>{s}</span>
+                        </button>
+                      ))
+                    )}
                   </div>
                 </div>
               )}

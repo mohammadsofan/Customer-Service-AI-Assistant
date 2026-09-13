@@ -58,4 +58,11 @@ public class SupportController : ControllerBase
         var response = await _supportService.GetQuestionHistoryAsync(employeeId, request, cancellationToken);
         return Ok(response);
     }
+
+    [HttpGet("top-scenarios")]
+    public async Task<ActionResult<IEnumerable<TopScenarioDto>>> GetTopScenarios([FromQuery] int count = 5, CancellationToken cancellationToken = default)
+    {
+        var scenarios = await _supportService.GetTopScenariosAsync(count, cancellationToken);
+        return Ok(scenarios);
+    }
 }
