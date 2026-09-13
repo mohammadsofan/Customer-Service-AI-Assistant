@@ -12,37 +12,129 @@ import { Layers } from 'lucide-react';
 
 export const AnalyticsPage = () => {
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
-  const [knowledge, setKnowledge] = useState<KnowledgeAnalytics[]>([]);
+  
+  // Categories state
   const [categories, setCategories] = useState<CategoryAnalytics[]>([]);
+  const [categoryPage, setCategoryPage] = useState(1);
+  const [categoryTotalPages, setCategoryTotalPages] = useState(1);
+  const [categoryTotalCount, setCategoryTotalCount] = useState(0);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+
+  // Knowledge scenarios state
+  const [knowledge, setKnowledge] = useState<KnowledgeAnalytics[]>([]);
+  const [knowledgePage, setKnowledgePage] = useState(1);
+  const [knowledgeTotalPages, setKnowledgeTotalPages] = useState(1);
+  const [knowledgeTotalCount, setKnowledgeTotalCount] = useState(0);
+  const [knowledgeLoading, setKnowledgeLoading] = useState(false);
+
+  // Unanswered questions state
   const [unanswered, setUnanswered] = useState<UnansweredQuestion[]>([]);
+  const [unansweredPage, setUnansweredPage] = useState(1);
+  const [unansweredTotalPages, setUnansweredTotalPages] = useState(1);
+  const [unansweredTotalCount, setUnansweredTotalCount] = useState(0);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
-  const [loading, setLoading] = useState(true);
+  const [unansweredLoading, setUnansweredLoading] = useState(false);
+
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Initial load
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInitialData = async () => {
       try {
-        const [overviewData, knowledgeData, categoriesData, unansweredData] = await Promise.all([
+        setInitialLoading(true);
+        const [overviewData, catRes, knowRes, unansRes] = await Promise.all([
           analyticsService.getOverview(),
-          analyticsService.getKnowledgeAnalytics(),
-          analyticsService.getCategoryAnalytics(),
-          analyticsService.getUnanswered()
+          analyticsService.getCategoryAnalytics(1, 5),
+          analyticsService.getKnowledgeAnalytics(1, 8),
+          analyticsService.getUnanswered(1, 8, sortOrder)
         ]);
+
         setOverview(overviewData);
-        setKnowledge(knowledgeData);
-        setCategories(categoriesData);
-        setUnanswered(unansweredData);
+
+        setCategories(catRes.items);
+        setCategoryTotalPages(catRes.totalPages);
+        setCategoryTotalCount(catRes.totalCount);
+
+        setKnowledge(knowRes.items);
+        setKnowledgeTotalPages(knowRes.totalPages);
+        setKnowledgeTotalCount(knowRes.totalCount);
+
+        setUnanswered(unansRes.items);
+        setUnansweredTotalPages(unansRes.totalPages);
+        setUnansweredTotalCount(unansRes.totalCount);
+
         setError(null);
       } catch (err) {
         setError('حدث خطأ أثناء تحميل البيانات');
       } finally {
-        setLoading(false);
+        setInitialLoading(false);
       }
     };
-    fetchData();
+
+    fetchInitialData();
   }, []);
 
-  if (loading) return <LoadingState />;
+  // Category page change
+  const handleCategoryPageChange = async (newPage: number) => {
+    setCategoryPage(newPage);
+    try {
+      setCategoryLoading(true);
+      const res = await analyticsService.getCategoryAnalytics(newPage, 5);
+      setCategories(res.items);
+      setCategoryTotalPages(res.totalPages);
+      setCategoryTotalCount(res.totalCount);
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+
+  // Knowledge page change
+  const handleKnowledgePageChange = async (newPage: number) => {
+    setKnowledgePage(newPage);
+    try {
+      setKnowledgeLoading(true);
+      const res = await analyticsService.getKnowledgeAnalytics(newPage, 8);
+      setKnowledge(res.items);
+      setKnowledgeTotalPages(res.totalPages);
+      setKnowledgeTotalCount(res.totalCount);
+    } catch (err) {
+      console.error('Failed to fetch knowledge:', err);
+    } finally {
+      setKnowledgeLoading(false);
+    }
+  };
+
+  // Unanswered page / sort change
+  const fetchUnansweredData = async (page: number, order: 'desc' | 'asc') => {
+    try {
+      setUnansweredLoading(true);
+      const res = await analyticsService.getUnanswered(page, 8, order);
+      setUnanswered(res.items);
+      setUnansweredTotalPages(res.totalPages);
+      setUnansweredTotalCount(res.totalCount);
+    } catch (err) {
+      console.error('Failed to fetch unanswered questions:', err);
+    } finally {
+      setUnansweredLoading(false);
+    }
+  };
+
+  const handleUnansweredPageChange = (newPage: number) => {
+    setUnansweredPage(newPage);
+    fetchUnansweredData(newPage, sortOrder);
+  };
+
+  const handleSortOrderToggle = () => {
+    const nextOrder = sortOrder === 'desc' ? 'asc' : 'desc';
+    setSortOrder(nextOrder);
+    setUnansweredPage(1);
+    fetchUnansweredData(1, nextOrder);
+  };
+
+  if (initialLoading) return <LoadingState />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
   if (!overview) return null;
 
@@ -193,12 +285,6 @@ export const AnalyticsPage = () => {
     }
   ];
 
-  const sortedUnanswered = [...unanswered].sort((a, b) => {
-    const timeA = new Date(a.timestamp || 0).getTime();
-    const timeB = new Date(b.timestamp || 0).getTime();
-    return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
-  });
-
   return (
     <div className="p-6 rtl bg-[#f5f5f7] min-h-screen" dir="rtl">
       <h2 className="text-2xl font-bold mb-6 text-gray-900">التحليلات والتقارير</h2>
@@ -218,30 +304,50 @@ export const AnalyticsPage = () => {
             <h3 className="text-xl font-bold text-slate-900">توزيع الاستفسارات حسب التصنيفات</h3>
           </div>
           <span className="text-xs text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
-            {categories.length} تصنيفات نشطة
+            إجمالي {categoryTotalCount} تصنيف
           </span>
         </div>
-        <DataTable 
-          columns={categoryColumns} 
-          data={categories.map(c => ({ ...c, id: c.categoryId }))} 
-        />
+        <div className={`transition-opacity duration-200 ${categoryLoading ? 'opacity-50 pointer-events-none' : ''}`}>
+          <DataTable 
+            columns={categoryColumns} 
+            data={categories.map(c => ({ ...c, id: c.categoryId }))} 
+            currentPage={categoryPage}
+            totalPages={categoryTotalPages}
+            onPageChange={handleCategoryPageChange}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-200/80">
-          <h3 className="text-xl font-bold mb-4 text-slate-900">إحصائيات السيناريوهات (المعرفة)</h3>
-          <DataTable 
-            columns={knowledgeColumns} 
-            data={knowledge.map(k => ({ ...k, id: k.scenarioId || k.id }))} 
-          />
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-slate-900">إحصائيات السيناريوهات (المعرفة)</h3>
+            <span className="text-xs text-gray-500 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-200">
+              إجمالي {knowledgeTotalCount} سيناريو
+            </span>
+          </div>
+          <div className={`transition-opacity duration-200 ${knowledgeLoading ? 'opacity-50 pointer-events-none' : ''}`}>
+            <DataTable 
+              columns={knowledgeColumns} 
+              data={knowledge.map(k => ({ ...k, id: k.scenarioId || k.id }))} 
+              currentPage={knowledgePage}
+              totalPages={knowledgeTotalPages}
+              onPageChange={handleKnowledgePageChange}
+            />
+          </div>
         </div>
         
         <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-200/80">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-slate-900">أسئلة غير مجابة</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xl font-bold text-slate-900">أسئلة غير مجابة</h3>
+              <span className="text-xs text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 font-medium">
+                {unansweredTotalCount}
+              </span>
+            </div>
             <button
               type="button"
-              onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+              onClick={handleSortOrderToggle}
               className="text-xs text-[#0055b8] hover:text-[#004699] bg-[#0055b8]/5 hover:bg-[#0055b8]/10 px-3 py-1.5 rounded-xl font-medium transition-colors border border-[#0055b8]/20 flex items-center gap-1.5 cursor-pointer"
               title="تغيير اتجاه الترتيب"
             >
@@ -249,7 +355,15 @@ export const AnalyticsPage = () => {
               <span className="font-semibold">{sortOrder === 'desc' ? 'الأحدث أولاً ↓' : 'الأقدم أولاً ↑'}</span>
             </button>
           </div>
-          <DataTable columns={unansweredColumns} data={sortedUnanswered} />
+          <div className={`transition-opacity duration-200 ${unansweredLoading ? 'opacity-50 pointer-events-none' : ''}`}>
+            <DataTable 
+              columns={unansweredColumns} 
+              data={unanswered} 
+              currentPage={unansweredPage}
+              totalPages={unansweredTotalPages}
+              onPageChange={handleUnansweredPageChange}
+            />
+          </div>
         </div>
       </div>
     </div>

@@ -35,23 +35,23 @@ public class AnalyticsController : ControllerBase
     }
 
     [HttpGet("knowledge")]
-    public async Task<IActionResult> GetKnowledge(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetKnowledge([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        var result = await _analyticsService.GetKnowledgeAnalyticsAsync(cancellationToken);
+        var result = await _analyticsService.GetKnowledgeAnalyticsAsync(page, pageSize, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("unanswered")]
-    public async Task<IActionResult> GetUnanswered(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetUnanswered([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string sortOrder = "desc", CancellationToken cancellationToken = default)
     {
-        var result = await _analyticsService.GetUnansweredAnalyticsAsync(cancellationToken);
+        var result = await _analyticsService.GetUnansweredAnalyticsAsync(page, pageSize, sortOrder, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("categories")]
-    public async Task<IActionResult> GetCategories(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetCategories([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        var result = await _analyticsService.GetCategoryAnalyticsAsync(cancellationToken);
+        var result = await _analyticsService.GetCategoryAnalyticsAsync(page, pageSize, cancellationToken);
         return Ok(result);
     }
 }

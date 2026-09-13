@@ -1,4 +1,5 @@
 using AIEmployeeSupport.Application.DTOs.Analytics;
+using AIEmployeeSupport.Application.DTOs.Common;
 using AIEmployeeSupport.Application.Interfaces;
 using AIEmployeeSupport.Application.Interfaces.Services;
 using AIEmployeeSupport.Domain.Enums;
@@ -76,32 +77,58 @@ public class AnalyticsService : IAnalyticsService
         };
     }
 
-    public async Task<IEnumerable<KnowledgeAnalyticsDto>> GetKnowledgeAnalyticsAsync(CancellationToken cancellationToken = default)
+    public async Task<PaginatedResponse<KnowledgeAnalyticsDto>> GetKnowledgeAnalyticsAsync(
+        int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        var questionsTuple = await _questionRepository.GetAllAsync(1, int.MaxValue, cancellationToken);
-        var scenariosTuple = await _scenarioRepository.GetAllAsync(1, int.MaxValue, null, null, cancellationToken);
-        
-        var questionsWithScenario = questionsTuple.Items.Where(q => q.ScenarioId.HasValue).ToList();
-        
-        return scenariosTuple.Items.Select(s => 
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var (questionsTuple, _) = await _questionRepository.GetAllAsync(1, int.MaxValue, cancellationToken);
+        var scenarioStats = questionsTuple
+            .Where(q => q.ScenarioId.HasValue)
+            .GroupBy(q => q.ScenarioId.Value)
+            .ToDictionary(
+                g => g.Key,
+                g => new
+                {
+                    Count = g.Count(),
+                    AvgSimilarityScore = g.Any(q => q.ConfidenceScore.HasValue)
+                        ? g.Where(q => q.ConfidenceScore.HasValue).Average(q => q.ConfidenceScore ?? 0)
+                        : 0,
+                    LastUsed = g.OrderByDescending(q => q.CreatedAt).FirstOrDefault()?.CreatedAt
+                });
+
+        var (scenarios, totalCount) = await _scenarioRepository.GetAllAsync(page, pageSize, null, null, cancellationToken);
+
+        var items = scenarios.Select(s =>
         {
-            var relatedQuestions = questionsWithScenario.Where(q => q.ScenarioId == s.Id).ToList();
+            var hasStats = scenarioStats.TryGetValue(s.Id, out var stats) && stats != null;
             return new KnowledgeAnalyticsDto
             {
                 ScenarioId = s.Id,
                 ScenarioName = s.Name,
                 CategoryName = s.Category?.Name ?? "غير مصنف",
-                RetrievalCount = relatedQuestions.Count,
-                AvgSimilarityScore = relatedQuestions.Any(q => q.ConfidenceScore.HasValue) 
-                    ? relatedQuestions.Where(q => q.ConfidenceScore.HasValue).Average(q => q.ConfidenceScore ?? 0) 
-                    : 0,
-                LastUsed = relatedQuestions.OrderByDescending(q => q.CreatedAt).FirstOrDefault()?.CreatedAt
+                RetrievalCount = hasStats ? stats!.Count : 0,
+                AvgSimilarityScore = hasStats ? stats!.AvgSimilarityScore : 0,
+                LastUsed = hasStats ? stats!.LastUsed : null
             };
         }).ToList();
+
+        return new PaginatedResponse<KnowledgeAnalyticsDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
-    public async Task<IEnumerable<CategoryAnalyticsDto>> GetCategoryAnalyticsAsync(CancellationToken cancellationToken = default)
+    public async Task<PaginatedResponse<CategoryAnalyticsDto>> GetCategoryAnalyticsAsync(
+        int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
         var categories = (await _categoryRepository.GetAllAsync(cancellationToken)).ToList();
         var (scenarios, _) = await _scenarioRepository.GetAllAsync(1, int.MaxValue, null, null, cancellationToken);
         var (questions, _) = await _questionRepository.GetAllAsync(1, int.MaxValue, cancellationToken);
@@ -110,7 +137,7 @@ public class AnalyticsService : IAnalyticsService
         var questionsList = questions.ToList();
         var totalWithScenario = questionsList.Count(q => q.ScenarioId.HasValue);
         
-        var result = categories.Select(c =>
+        var allCategories = categories.Select(c =>
         {
             var catScenarioIds = scenariosList.Where(s => s.CategoryId == c.Id).Select(s => s.Id).ToHashSet();
             var count = questionsList.Count(q => q.ScenarioId.HasValue && catScenarioIds.Contains(q.ScenarioId.Value));
@@ -129,7 +156,7 @@ public class AnalyticsService : IAnalyticsService
         if (unassignedScenarios.Count > 0)
         {
             var unassignedCount = questionsList.Count(q => q.ScenarioId.HasValue && unassignedScenarios.Contains(q.ScenarioId.Value));
-            result.Add(new CategoryAnalyticsDto
+            allCategories.Add(new CategoryAnalyticsDto
             {
                 CategoryId = Guid.Empty,
                 CategoryName = "غير مصنف",
@@ -139,14 +166,27 @@ public class AnalyticsService : IAnalyticsService
             });
         }
 
-        return result;
+        var totalCount = allCategories.Count;
+        var pagedItems = allCategories.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+        return new PaginatedResponse<CategoryAnalyticsDto>
+        {
+            Items = pagedItems,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
-    public async Task<UnansweredAnalyticsDto> GetUnansweredAnalyticsAsync(CancellationToken cancellationToken = default)
+    public async Task<UnansweredAnalyticsDto> GetUnansweredAnalyticsAsync(
+        int page = 1, int pageSize = 10, string sortOrder = "desc", CancellationToken cancellationToken = default)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
         var unansweredQuestions = await _questionRepository.GetUnansweredAsync(cancellationToken);
         
-        var grouped = unansweredQuestions
+        var query = unansweredQuestions
             .GroupBy(q => q.QuestionText.ToLowerInvariant().Trim())
             .Select(g => 
             {
@@ -162,13 +202,22 @@ public class AnalyticsService : IAnalyticsService
                     FirstAsked = g.Min(q => q.CreatedAt),
                     LastAsked = g.Max(q => q.CreatedAt)
                 };
-            })
-            .OrderByDescending(x => x.LastAsked)
-            .ToList();
+            });
+
+        query = string.Equals(sortOrder, "asc", StringComparison.OrdinalIgnoreCase)
+            ? query.OrderBy(x => x.LastAsked)
+            : query.OrderByDescending(x => x.LastAsked);
+
+        var list = query.ToList();
+        var totalCount = list.Count;
+        var pagedItems = list.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
         return new UnansweredAnalyticsDto
         {
-            Questions = grouped
+            Questions = pagedItems,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
         };
     }
 }

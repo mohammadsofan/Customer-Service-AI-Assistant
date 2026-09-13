@@ -49,6 +49,14 @@ export interface CategoryAnalytics {
     percentage: number;
 }
 
+export interface PaginatedResult<T> {
+    items: T[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+}
+
 export interface UnansweredQuestion {
     id: string | number;
     question?: string;
@@ -99,11 +107,13 @@ const analyticsService = {
         const list = data?.questions || (Array.isArray(data) ? data : []);
         return list;
     },
-    getKnowledgeAnalytics: async (): Promise<KnowledgeAnalytics[]> => {
-        const response = await api.get<any>('/analytics/knowledge');
+    getKnowledgeAnalytics: async (page = 1, pageSize = 8): Promise<PaginatedResult<KnowledgeAnalytics>> => {
+        const response = await api.get<any>('/analytics/knowledge', { params: { page, pageSize } });
         const data = response.data;
         const list = Array.isArray(data) ? data : (data?.items || []);
-        return list.map((item: any) => ({
+        const totalCount = data?.totalCount ?? list.length;
+        const totalPages = data?.totalPages ?? Math.max(1, Math.ceil(totalCount / pageSize));
+        const items = list.map((item: any) => ({
             id: item.scenarioId || item.categoryId || item.id,
             scenarioId: item.scenarioId,
             scenarioName: item.scenarioName || 'سيناريو عام',
@@ -111,18 +121,23 @@ const analyticsService = {
             usageCount: item.retrievalCount ?? item.usageCount ?? 0,
             avgSimilarityScore: item.avgSimilarityScore ?? 0
         }));
+        return { items, totalCount, page, pageSize, totalPages };
     },
-    getCategoryAnalytics: async (): Promise<CategoryAnalytics[]> => {
-        const response = await api.get<any>('/analytics/categories');
+    getCategoryAnalytics: async (page = 1, pageSize = 5): Promise<PaginatedResult<CategoryAnalytics>> => {
+        const response = await api.get<any>('/analytics/categories', { params: { page, pageSize } });
         const data = response.data;
         const list = Array.isArray(data) ? data : (data?.items || []);
-        return list;
+        const totalCount = data?.totalCount ?? list.length;
+        const totalPages = data?.totalPages ?? Math.max(1, Math.ceil(totalCount / pageSize));
+        return { items: list, totalCount, page, pageSize, totalPages };
     },
-    getUnanswered: async (): Promise<UnansweredQuestion[]> => {
-        const response = await api.get<any>('/analytics/unanswered');
+    getUnanswered: async (page = 1, pageSize = 8, sortOrder = 'desc'): Promise<PaginatedResult<UnansweredQuestion>> => {
+        const response = await api.get<any>('/analytics/unanswered', { params: { page, pageSize, sortOrder } });
         const data = response.data;
-        const list = data?.questions || (Array.isArray(data) ? data : []);
-        return list.map((u: any) => ({
+        const list = data?.questions || (Array.isArray(data) ? data : (data?.items || []));
+        const totalCount = data?.totalCount ?? list.length;
+        const totalPages = data?.totalPages ?? Math.max(1, Math.ceil(totalCount / pageSize));
+        const items = list.map((u: any) => ({
             id: u.id,
             question: u.questionText || u.question || '',
             questionText: u.questionText || u.question || '',
@@ -132,6 +147,7 @@ const analyticsService = {
             employeeName: u.employeeName,
             employeeEmail: u.employeeEmail
         }));
+        return { items, totalCount, page, pageSize, totalPages };
     }
 };
 
