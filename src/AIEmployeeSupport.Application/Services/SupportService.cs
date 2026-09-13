@@ -47,6 +47,9 @@ public class SupportService : ISupportService
         var dtos = items.Select(q => new QuestionHistoryDto
         {
             Id = q.Id,
+            EmployeeId = q.EmployeeId,
+            EmployeeName = q.Employee != null ? q.Employee.FullName : null,
+            EmployeeEmail = q.Employee != null ? q.Employee.Email : null,
             QuestionText = q.QuestionText,
             Status = q.Status.ToString(),
             AnsweredByAI = q.AnsweredByAI,

@@ -22,6 +22,9 @@ export interface PaginatedRequest {
 
 export interface QuestionHistoryDto {
     id: string;
+    employeeId?: string;
+    employeeName?: string;
+    employeeEmail?: string;
     questionText: string;
     status: string;
     answeredByAI: boolean;

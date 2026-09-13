@@ -48,6 +48,9 @@ public class QuestionsController : ControllerBase
         var dtos = items.Select(q => new QuestionHistoryDto
         {
             Id = q.Id,
+            EmployeeId = q.EmployeeId,
+            EmployeeName = q.Employee != null ? q.Employee.FullName : null,
+            EmployeeEmail = q.Employee != null ? q.Employee.Email : null,
             QuestionText = q.QuestionText,
             Status = q.Status.ToString(),
             AnsweredByAI = q.AnsweredByAI,
@@ -68,8 +71,25 @@ public class QuestionsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var question = await _questionRepository.GetByIdAsync(id, cancellationToken);
-        if (question == null) return NotFound();
-        return Ok(question);
+        var q = await _questionRepository.GetByIdAsync(id, cancellationToken);
+        if (q == null) return NotFound();
+        return Ok(new
+        {
+            q.Id,
+            q.QuestionText,
+            Status = q.Status.ToString(),
+            q.AnswerText,
+            q.AnsweredByAI,
+            q.Escalated,
+            q.ConfidenceScore,
+            q.ScenarioId,
+            ScenarioName = q.Scenario?.Name,
+            q.CreatedAt,
+            q.CompletedAt,
+            q.ProcessingTimeMs,
+            EmployeeId = q.EmployeeId,
+            EmployeeName = q.Employee?.FullName,
+            EmployeeEmail = q.Employee?.Email
+        });
     }
 }

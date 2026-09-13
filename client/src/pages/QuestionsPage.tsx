@@ -59,6 +59,23 @@ export const QuestionsPage = () => {
     { key: 'id', header: 'معرف السؤال' },
     { key: 'questionText', header: 'النص' },
     { 
+      key: 'employee', 
+      header: 'الموظف',
+      cell: (item: QuestionHistoryDto) => (
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 font-bold text-xs flex items-center justify-center border border-blue-200 shrink-0">
+            {item.employeeName ? item.employeeName.charAt(0).toUpperCase() : '؟'}
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="font-medium text-gray-900 text-sm truncate">{item.employeeName || 'غير محدد'}</span>
+            {item.employeeEmail && (
+              <span className="text-xs text-gray-400 truncate">{item.employeeEmail}</span>
+            )}
+          </div>
+        </div>
+      )
+    },
+    { 
       key: 'status', 
       header: 'الحالة',
       cell: (item: QuestionHistoryDto) => {
@@ -139,6 +156,18 @@ export const QuestionsPage = () => {
       >
         {selectedQuestion && (
           <div className="space-y-4">
+            <div>
+              <strong className="block text-gray-700 mb-1">الموظف المُرسل:</strong>
+              <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
+                  {selectedQuestion.employeeName ? selectedQuestion.employeeName.charAt(0).toUpperCase() : '؟'}
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 text-sm">{selectedQuestion.employeeName || 'غير محدد'}</p>
+                  <p className="text-xs text-gray-500 font-mono">{selectedQuestion.employeeEmail || selectedQuestion.employeeId || 'لا يوجد بريد إلكتروني'}</p>
+                </div>
+              </div>
+            </div>
             <div>
               <strong className="block text-gray-700 mb-1">معرف السؤال:</strong>
               <p className="font-mono text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-200 break-all">{selectedQuestion.id}</p>

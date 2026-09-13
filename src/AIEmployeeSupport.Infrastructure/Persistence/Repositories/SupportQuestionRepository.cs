@@ -37,6 +37,7 @@ public class SupportQuestionRepository : ISupportQuestionRepository
         Guid employeeId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.SupportQuestions.AsNoTracking()
+            .Include(q => q.Employee)
             .Where(q => q.EmployeeId == employeeId);
         var totalCount = await query.CountAsync(cancellationToken);
         var items = await query.OrderByDescending(q => q.CreatedAt)
