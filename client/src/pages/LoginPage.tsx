@@ -59,7 +59,7 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="bg-white rounded-3xl shadow-xl shadow-slate-300/40 border border-slate-200/90 p-8 sm:p-10 transition-all duration-300 relative overflow-hidden">
       {/* Top Brand Stripe */}
-      <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#0055b8] via-[#76bc21] to-[#f4771d]" />
+      <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#67a61d] via-[#76bc21] to-[#86d426]" />
 
       {/* Header & Logo */}
       <div className="text-center space-y-3 mb-8 pt-1">
