@@ -14,7 +14,6 @@ namespace AIEmployeeSupport.API.Controllers;
 [ApiController]
 [Route("api/support/questions")]
 [Authorize(Policy = "EmployeeOrAdmin")]
-[EnableRateLimiting("SupportRateLimit")]
 public class SupportController : ControllerBase
 {
     private readonly ISupportService _supportService;
@@ -25,6 +24,7 @@ public class SupportController : ControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting("SupportRateLimit")]
     public async Task<ActionResult<QuestionResponse>> SubmitQuestion([FromBody] SubmitQuestionRequest request, CancellationToken cancellationToken)
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
