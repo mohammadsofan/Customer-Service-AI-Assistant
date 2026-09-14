@@ -113,13 +113,13 @@ export const EmployeeSupportPage: React.FC = () => {
       <div className="text-center max-w-2xl mx-auto space-y-2 mb-2">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#76bc21]/15 border border-[#76bc21]/30 text-xs font-bold text-[#3b6b0c]">
           <Sparkles className="w-3.5 h-3.5 text-[#76bc21]" />
-          <span>نظام الإجابات المعرفية الفورية (RAG)</span>
+          <span>المساعد الذكي لخدمة العملاء</span>
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
           ما المشكلة التي يواجهها العميل؟
         </h2>
         <p className="text-sm text-slate-500">
-          اكتب استفسار العميل باللغة العربية وسيقوم المساعد بمطابقته فورياً مع قاعدة المعرفة المعتمدة
+          اكتب استفسار أو مشكلة العميل وسيقوم المساعد بتزويدك بخطوات الحل المعتمدة فوراً
         </p>
       </div>
 
@@ -167,7 +167,7 @@ export const EmployeeSupportPage: React.FC = () => {
                     <span className="font-bold text-slate-700 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-[#76bc21]" />
                       <span>أمثلة شائعة للاختيار السريع:</span>
-                      <span className="text-[11px] font-normal text-slate-400">(السيناريوهات الأكثر استخداماً)</span>
+                      <span className="text-[11px] font-normal text-slate-400">(الحلول الأكثر طلباً)</span>
                     </span>
                     <span className="text-[11px] text-slate-400">انقر لتعبئة السؤال</span>
                   </div>

@@ -79,7 +79,7 @@ export const EmployeeLayout = () => {
 
       {/* Footer */}
       <footer className="py-4 border-t border-slate-200/60 text-center text-xs text-slate-400">
-        نظام دعم الموظفين الذكي &copy; {new Date().getFullYear()} — مدعوم بأحدث تقنيات RAG وقواعد المعرفة المعززة
+        نظام دعم الموظفين الذكي &copy; {new Date().getFullYear()} — المساعد الذكي لموظفي خدمة العملاء والدعم الفني
       </footer>
     </div>
   );
