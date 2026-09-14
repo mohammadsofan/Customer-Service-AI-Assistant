@@ -126,4 +126,13 @@ public class SupportQuestionRepository : ISupportQuestionRepository
         return await query.OrderByDescending(q => q.CreatedAt)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<Dictionary<Guid, int>> GetScenarioUsageCountsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.SupportQuestions.AsNoTracking()
+            .Where(q => q.ScenarioId != null)
+            .GroupBy(q => q.ScenarioId!.Value)
+            .Select(g => new { ScenarioId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.ScenarioId, x => x.Count, cancellationToken);
+    }
 }

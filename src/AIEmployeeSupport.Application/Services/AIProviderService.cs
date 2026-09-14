@@ -175,20 +175,9 @@ public class AIProviderService : IAIProviderService
         }
     }
 
-    private AIProviderDto MapToDto(AIProvider provider)
+    private static AIProviderDto MapToDto(AIProvider provider)
     {
-        string rawApiKey = string.Empty;
-        if (!string.IsNullOrWhiteSpace(provider.EncryptedApiKey))
-        {
-            try
-            {
-                rawApiKey = _encryptionService.Decrypt(provider.EncryptedApiKey);
-            }
-            catch
-            {
-                rawApiKey = provider.EncryptedApiKey;
-            }
-        }
+        var hasKey = !string.IsNullOrWhiteSpace(provider.EncryptedApiKey);
 
         return new AIProviderDto
         {
@@ -198,16 +187,10 @@ public class AIProviderService : IAIProviderService
             BaseUrl = provider.BaseUrl,
             IsActive = provider.IsActive,
             FallbackPriority = provider.FallbackPriority,
-            MaskedApiKey = MaskApiKey(rawApiKey),
+            HasApiKey = hasKey,
+            MaskedApiKey = hasKey ? "••••••••" : string.Empty,
             ModelCount = provider.Models?.Count ?? 0,
             CreatedAt = provider.CreatedAt
         };
-    }
-
-    private string MaskApiKey(string apiKey)
-    {
-        if (string.IsNullOrEmpty(apiKey)) return string.Empty;
-        if (apiKey.Length <= 6) return new string('*', apiKey.Length);
-        return apiKey.Substring(0, 3) + new string('*', apiKey.Length - 6) + apiKey.Substring(apiKey.Length - 3);
     }
 }

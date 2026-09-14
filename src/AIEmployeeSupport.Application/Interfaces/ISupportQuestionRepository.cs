@@ -30,4 +30,5 @@ public interface ISupportQuestionRepository
         DateTime? toDate,
         CancellationToken cancellationToken = default);
     Task<IEnumerable<SupportQuestion>> GetUnansweredAsync(DateTime? fromDate = null, DateTime? toDate = null, CancellationToken cancellationToken = default);
+    Task<Dictionary<Guid, int>> GetScenarioUsageCountsAsync(CancellationToken cancellationToken = default);
 }

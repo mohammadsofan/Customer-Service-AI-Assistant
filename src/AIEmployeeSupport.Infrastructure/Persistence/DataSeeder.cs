@@ -2,63 +2,86 @@ using AIEmployeeSupport.Domain.Entities;
 using AIEmployeeSupport.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace AIEmployeeSupport.Infrastructure.Persistence;
 
 public static class DataSeeder
 {
-    public static async Task SeedAsync(ApplicationDbContext context)
+    public static Task SeedAsync(ApplicationDbContext context) => SeedAsync(context, null, true);
+
+    public static async Task SeedAsync(ApplicationDbContext context, IConfiguration? configuration, bool isDevelopment)
     {
         var passwordHasher = new PasswordHasher<User>();
         var now = DateTime.UtcNow;
 
-        // ── Ensure Admins Exist ─────────────────────────────────
-        if (!await context.Users.AnyAsync(u => u.Email == "admin@company.com"))
-        {
-            var companyAdmin = new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "admin@company.com",
-                FullName = "مدير النظام",
-                Role = UserRole.Administrator,
-                IsActive = true,
-                CreatedAt = now,
-                UpdatedAt = now
-            };
-            companyAdmin.PasswordHash = passwordHasher.HashPassword(companyAdmin, "Admin123!");
-            context.Users.Add(companyAdmin);
-        }
+        var envAdminEmail = configuration?["INITIAL_ADMIN_EMAIL"];
+        var envAdminPassword = configuration?["INITIAL_ADMIN_PASSWORD"];
 
-        if (!await context.Users.AnyAsync(u => u.Email == "admin@system.local"))
+        // In production, do NOT seed default credentials unless explicitly configured via environment variables
+        if (!isDevelopment && (string.IsNullOrWhiteSpace(envAdminEmail) || string.IsNullOrWhiteSpace(envAdminPassword)))
         {
-            var systemAdmin = new User
+            if (!await context.Users.AnyAsync(u => u.Role == UserRole.Administrator))
             {
-                Id = Guid.NewGuid(),
-                Email = "admin@system.local",
-                FullName = "مدير النظام",
-                Role = UserRole.Administrator,
-                IsActive = true,
-                CreatedAt = now,
-                UpdatedAt = now
-            };
-            systemAdmin.PasswordHash = passwordHasher.HashPassword(systemAdmin, "Admin@123");
-            context.Users.Add(systemAdmin);
+                // In production without INITIAL_ADMIN_EMAIL/PASSWORD, do not seed weak default credentials
+                return;
+            }
         }
-
-        if (!await context.Users.AnyAsync(u => u.Email == "employee@company.com"))
+        else
         {
-            var companyEmployee = new User
+            var adminEmail = !string.IsNullOrWhiteSpace(envAdminEmail) ? envAdminEmail : "admin@company.com";
+            var adminPassword = !string.IsNullOrWhiteSpace(envAdminPassword) ? envAdminPassword : "Admin123!";
+
+            if (!await context.Users.AnyAsync(u => u.Email == adminEmail))
             {
-                Id = Guid.NewGuid(),
-                Email = "employee@company.com",
-                FullName = "موظف الدعم",
-                Role = UserRole.Employee,
-                IsActive = true,
-                CreatedAt = now,
-                UpdatedAt = now
-            };
-            companyEmployee.PasswordHash = passwordHasher.HashPassword(companyEmployee, "Employee123!");
-            context.Users.Add(companyEmployee);
+                var companyAdmin = new User
+                {
+                    Id = Guid.NewGuid(),
+                    Email = adminEmail,
+                    FullName = "مدير النظام",
+                    Role = UserRole.Administrator,
+                    IsActive = true,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                };
+                companyAdmin.PasswordHash = passwordHasher.HashPassword(companyAdmin, adminPassword);
+                context.Users.Add(companyAdmin);
+            }
+
+            if (isDevelopment)
+            {
+                if (!await context.Users.AnyAsync(u => u.Email == "admin@system.local"))
+                {
+                    var systemAdmin = new User
+                    {
+                        Id = Guid.NewGuid(),
+                        Email = "admin@system.local",
+                        FullName = "مدير النظام",
+                        Role = UserRole.Administrator,
+                        IsActive = true,
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    };
+                    systemAdmin.PasswordHash = passwordHasher.HashPassword(systemAdmin, "Admin@123");
+                    context.Users.Add(systemAdmin);
+                }
+
+                if (!await context.Users.AnyAsync(u => u.Email == "employee@company.com"))
+                {
+                    var companyEmployee = new User
+                    {
+                        Id = Guid.NewGuid(),
+                        Email = "employee@company.com",
+                        FullName = "موظف الدعم",
+                        Role = UserRole.Employee,
+                        IsActive = true,
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    };
+                    companyEmployee.PasswordHash = passwordHasher.HashPassword(companyEmployee, "Employee123!");
+                    context.Users.Add(companyEmployee);
+                }
+            }
         }
 
         await context.SaveChangesAsync();

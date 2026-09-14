@@ -1,5 +1,6 @@
 using AIEmployeeSupport.Application.DTOs.Common;
 using AIEmployeeSupport.Application.DTOs.Support;
+using AIEmployeeSupport.Application.Exceptions;
 using AIEmployeeSupport.Application.Interfaces;
 using AIEmployeeSupport.Application.Interfaces.Services;
 using AIEmployeeSupport.Domain.Enums;
@@ -28,10 +29,15 @@ public class SupportService : ISupportService
         return await _ragService.ProcessQuestionAsync(request.Problem, employeeId, cancellationToken);
     }
 
-    public async Task<QuestionResponse?> GetQuestionByIdAsync(Guid questionId, CancellationToken cancellationToken = default)
+    public async Task<QuestionResponse?> GetQuestionByIdAsync(Guid questionId, Guid currentUserId, bool isAdmin, CancellationToken cancellationToken = default)
     {
         var question = await _questionRepository.GetByIdAsync(questionId, cancellationToken);
         if (question == null) return null;
+
+        if (!isAdmin && question.EmployeeId != currentUserId)
+        {
+            throw new ForbiddenException("ليس لديك صلاحية للاطلاع على هذا السؤال.");
+        }
 
         return new QuestionResponse
         {
@@ -75,13 +81,8 @@ public class SupportService : ISupportService
 
     public async Task<IEnumerable<TopScenarioDto>> GetTopScenariosAsync(int count = 5, CancellationToken cancellationToken = default)
     {
-        var (scenarios, _) = await _scenarioRepository.GetAllAsync(1, int.MaxValue, ScenarioStatus.Active, null, cancellationToken);
-        var (allQuestions, _) = await _questionRepository.GetAllAsync(1, int.MaxValue, cancellationToken);
-
-        var scenarioUsage = allQuestions
-            .Where(q => q.ScenarioId.HasValue)
-            .GroupBy(q => q.ScenarioId!.Value)
-            .ToDictionary(g => g.Key, g => g.Count());
+        var (scenarios, _) = await _scenarioRepository.GetAllAsync(1, Math.Max(count * 5, 50), ScenarioStatus.Active, null, cancellationToken);
+        var scenarioUsage = await _questionRepository.GetScenarioUsageCountsAsync(cancellationToken);
 
         return scenarios
             .Select(s => new TopScenarioDto

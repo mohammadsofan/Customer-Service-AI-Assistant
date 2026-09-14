@@ -7,12 +7,14 @@ using AIEmployeeSupport.Application.DTOs.Support;
 using AIEmployeeSupport.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AIEmployeeSupport.API.Controllers;
 
 [ApiController]
 [Route("api/support/questions")]
 [Authorize(Policy = "EmployeeOrAdmin")]
+[EnableRateLimiting("SupportRateLimit")]
 public class SupportController : ControllerBase
 {
     private readonly ISupportService _supportService;
@@ -38,7 +40,14 @@ public class SupportController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<QuestionResponse>> GetQuestionById(Guid id, CancellationToken cancellationToken)
     {
-        var response = await _supportService.GetQuestionByIdAsync(id, cancellationToken);
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var currentUserId))
+        {
+            return Unauthorized();
+        }
+
+        var isAdmin = User.IsInRole("Administrator");
+        var response = await _supportService.GetQuestionByIdAsync(id, currentUserId, isAdmin, cancellationToken);
         if (response == null)
         {
             return NotFound();

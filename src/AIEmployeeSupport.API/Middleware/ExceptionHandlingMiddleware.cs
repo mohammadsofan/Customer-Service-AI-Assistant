@@ -80,10 +80,10 @@ public class ExceptionHandlingMiddleware
                 message = argEx.Message;
                 break;
 
-            case InvalidOperationException invEx:
+            case InvalidOperationException:
                 statusCode = HttpStatusCode.BadRequest;
                 errorCode = "INVALID_OPERATION";
-                message = invEx.Message;
+                message = "تعذر إتمام العملية المطلوبة بسبب حالة غير صالحة.";
                 break;
         }
 

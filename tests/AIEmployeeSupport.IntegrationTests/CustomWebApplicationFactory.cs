@@ -5,10 +5,14 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 using AIEmployeeSupport.Infrastructure.Persistence;
 
+using Microsoft.EntityFrameworkCore.Storage;
+
 namespace AIEmployeeSupport.IntegrationTests;
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
+    private static readonly InMemoryDatabaseRoot _dbRoot = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
@@ -23,7 +27,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
             services.AddDbContext<ApplicationDbContext>(options =>
             {
-                options.UseInMemoryDatabase("TestDb");
+                options.UseInMemoryDatabase("TestDb", _dbRoot);
             });
 
             services.AddScoped<Microsoft.AspNetCore.Identity.IPasswordHasher<AIEmployeeSupport.Domain.Entities.User>, Microsoft.AspNetCore.Identity.PasswordHasher<AIEmployeeSupport.Domain.Entities.User>>();

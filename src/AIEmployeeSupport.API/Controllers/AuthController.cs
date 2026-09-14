@@ -6,11 +6,13 @@ using AIEmployeeSupport.Application.DTOs.Auth;
 using AIEmployeeSupport.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AIEmployeeSupport.API.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("AuthRateLimit")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;

@@ -2,16 +2,19 @@ using AIEmployeeSupport.Application.Interfaces;
 using AIEmployeeSupport.Domain.Entities;
 using AIEmployeeSupport.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace AIEmployeeSupport.Infrastructure.Persistence.Repositories;
 
 public class KnowledgeEmbeddingRepository : IKnowledgeEmbeddingRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly ILogger<KnowledgeEmbeddingRepository> _logger;
 
-    public KnowledgeEmbeddingRepository(ApplicationDbContext context)
+    public KnowledgeEmbeddingRepository(ApplicationDbContext context, ILogger<KnowledgeEmbeddingRepository> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<KnowledgeEmbedding?> GetByScenarioIdAsync(Guid scenarioId, CancellationToken cancellationToken = default)
@@ -68,7 +71,7 @@ public class KnowledgeEmbeddingRepository : IKnowledgeEmbeddingRepository
 
         foreach (var item in scored)
         {
-            Console.WriteLine($"[RAG Sim] Scenario: '{item.Embedding.Scenario?.Name}' - Similarity: {item.Similarity:F4} (Threshold: {threshold})");
+            _logger.LogDebug("[RAG Sim] Scenario: '{ScenarioName}' - Similarity: {Similarity:F4} (Threshold: {Threshold})", item.Embedding.Scenario?.Name, item.Similarity, threshold);
         }
 
         var results = scored
