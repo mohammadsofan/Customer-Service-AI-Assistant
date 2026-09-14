@@ -107,6 +107,10 @@ public class EmployeeService : IEmployeeService
 
         user.FullName = request.FullName;
         user.IsActive = request.IsActive;
+        if (!string.IsNullOrWhiteSpace(request.Password))
+        {
+            user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
+        }
         user.UpdatedAt = DateTime.UtcNow;
 
         await _userRepository.UpdateAsync(user, cancellationToken);

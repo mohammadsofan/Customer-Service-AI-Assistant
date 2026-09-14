@@ -3,6 +3,7 @@ import { type User } from './authService';
 
 export interface Employee extends User {
     department?: string;
+    password?: string;
 }
 
 export interface PaginatedEmployees {
@@ -38,18 +39,22 @@ const employeeService = {
         const payload = {
             fullName: employee.fullName || employee.username,
             email: employee.email,
-            password: (employee as any).password || 'Employee123!',
+            password: employee.password || 'Employee123!',
             role: employee.role || 'Employee'
         };
         const response = await api.post<Employee>('/employees', payload);
         return response.data;
     },
     updateEmployee: async (id: string, employee: Partial<Employee>): Promise<Employee> => {
-        const payload = {
+        const payload: any = {
             fullName: employee.fullName || employee.username,
             email: employee.email,
-            role: employee.role || 'Employee'
+            role: employee.role || 'Employee',
+            isActive: (employee as any).isActive ?? true
         };
+        if (employee.password && employee.password.trim()) {
+            payload.password = employee.password.trim();
+        }
         const response = await api.put<Employee>(`/employees/${id}`, payload);
         return response.data;
     },
