@@ -54,7 +54,7 @@ public class KnowledgeEmbeddingRepository : IKnowledgeEmbeddingRepository
                 .ThenInclude(s => s.Category)
             .Include(e => e.Scenario)
                 .ThenInclude(s => s.ResolutionSteps.OrderBy(r => r.StepOrder))
-            .Where(e => e.Status == EmbeddingStatus.Ready)
+            .Where(e => e.Status == EmbeddingStatus.Ready && e.Scenario.Status == ScenarioStatus.Active)
             .ToListAsync(cancellationToken);
 
         // Deserialize the query vector
