@@ -88,26 +88,29 @@ export const AdminDashboard = () => {
   return (
     <div className="space-y-8" dir="rtl">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-[#002f6c] to-slate-900 text-white p-8 shadow-xl shadow-black/10 border border-slate-800/80">
-        <div className="absolute top-0 left-0 w-80 h-80 bg-[#76bc21]/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-2xl bg-[#002f6c] text-white p-7 sm:p-8 shadow-sm border border-[#002657]">
+        {/* Subtle geometric background motif */}
+        <div className="absolute top-0 left-0 w-72 h-72 bg-white/[0.03] rounded-full -translate-x-1/3 -translate-y-1/3 pointer-events-none" />
+        <div className="absolute -bottom-10 left-1/3 w-80 h-40 bg-[#76bc21]/10 rounded-full blur-2xl pointer-events-none" />
+
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 border border-[#76bc21]/40 text-xs font-semibold backdrop-blur-md text-white">
-              <span className="w-2 h-2 rounded-full bg-[#76bc21] animate-pulse" />
-              <span>نظام الدعم المعرفي نشط ومحدث</span>
+          <div className="space-y-2.5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-semibold text-white">
+              <span className="w-2 h-2 rounded-full bg-[#76bc21]" />
+              <span>نظام الدعم المعرفي الموحد</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
               لوحة التحكم والإحصائيات
             </h1>
-            <p className="text-slate-300 text-sm max-w-xl leading-relaxed">
+            <p className="text-blue-100/90 text-sm max-w-xl leading-relaxed">
               متابعة استفسارات الموظفين، أداء نماذج الذكاء الاصطناعي، ودقة استرجاع سيناريوهات قاعدة المعرفة بشكل لحظي.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <Link
               to="/admin/knowledge/create"
-              className="px-5 py-3 rounded-xl bg-[#76bc21] hover:bg-[#67a61d] text-white font-bold text-sm shadow-md shadow-[#76bc21]/25 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+              className="px-5 py-3 rounded-xl bg-[#76bc21] hover:bg-[#67a61d] active:bg-[#5b9419] text-white font-bold text-sm shadow-sm transition-all flex items-center gap-2 hover:scale-[1.01] active:scale-[0.99]"
             >
               <BookPlus className="w-4 h-4" />
               <span>إضافة سيناريو جديد</span>
@@ -234,17 +237,17 @@ interface StatCardProps {
 
 const colorStyles = {
   blue: 'bg-[#0055b8]/10 text-[#0055b8] border-[#0055b8]/20',
-  amber: 'bg-amber-50 text-amber-600 border-amber-100',
+  amber: 'bg-[#f4771d]/10 text-[#f4771d] border-[#f4771d]/25',
   emerald: 'bg-[#76bc21]/15 text-[#3b680c] border-[#76bc21]/30',
   rose: 'bg-rose-50 text-rose-600 border-rose-100',
-  indigo: 'bg-[#0055b8]/10 text-[#0055b8] border-[#0055b8]/20',
-  violet: 'bg-violet-50 text-violet-600 border-violet-100',
-  orange: 'bg-[#f4771d]/15 text-[#b34f07] border-[#f4771d]/30',
+  indigo: 'bg-[#002f6c]/10 text-[#002f6c] border-[#002f6c]/20',
+  violet: 'bg-slate-100 text-slate-700 border-slate-200/80',
+  orange: 'bg-[#f4771d]/10 text-[#b34f07] border-[#f4771d]/25',
   cyan: 'bg-[#76bc21]/15 text-[#3b680c] border-[#76bc21]/30',
 };
 
 const StatCard = ({ title, value, subtitle, icon: Icon, color }: StatCardProps) => (
-  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+  <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-sm transition-shadow">
     <div className="flex items-center justify-between gap-4 mb-4">
       <span className="text-xs font-semibold text-slate-500">{title}</span>
       <div className={`p-2.5 rounded-xl border ${colorStyles[color]}`}>
@@ -263,10 +266,10 @@ const StatCard = ({ title, value, subtitle, icon: Icon, color }: StatCardProps) 
 const QuickActionCard = ({ title, desc, icon: Icon, to }: any) => (
   <Link
     to={to}
-    className="group p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-lg hover:border-[#76bc21]/50 transition-all duration-200 flex flex-col justify-between"
+    className="group p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-[#76bc21]/50 transition-all duration-200 flex flex-col justify-between"
   >
     <div className="space-y-3">
-      <div className="w-12 h-12 rounded-xl bg-slate-50 text-[#0055b8] border border-slate-200/60 flex items-center justify-center group-hover:bg-[#76bc21] group-hover:text-white group-hover:border-[#76bc21] transition-colors">
+      <div className="w-12 h-12 rounded-xl bg-blue-50/60 text-[#0055b8] border border-blue-100/80 flex items-center justify-center group-hover:bg-[#76bc21] group-hover:text-white group-hover:border-[#76bc21] transition-all">
         <Icon className="w-6 h-6" />
       </div>
       <h4 className="text-base font-bold text-slate-900 group-hover:text-[#3b680c] transition-colors">

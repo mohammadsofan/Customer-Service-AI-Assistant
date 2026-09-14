@@ -59,18 +59,18 @@ export const AdminLayout = () => {
   return (
     <div dir="rtl" className="flex h-screen bg-[#f5f5f7] font-sans overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-72 bg-slate-900 text-slate-300 flex flex-col shadow-2xl z-20 border-l border-slate-800">
+      <aside className="w-72 bg-[#002654] text-slate-200 flex flex-col shadow-xl z-20 border-l border-[#001c3d]">
         {/* Brand Header */}
-        <div className="h-20 px-6 flex items-center gap-3.5 border-b border-slate-800/80 bg-slate-950/40">
-          <div className="w-11 h-11 rounded-xl bg-white border border-slate-700 shadow-md p-1.5 flex items-center justify-center shrink-0">
+        <div className="h-20 px-6 flex items-center gap-3.5 border-b border-[#001c3d] bg-[#001d40]">
+          <div className="w-11 h-11 rounded-xl bg-white border border-white/20 shadow-xs p-1.5 flex items-center justify-center shrink-0">
             <img src="/brand/emblem.png" alt="Emblem" className="w-full h-full object-contain rounded-lg" />
           </div>
           <div>
             <h1 className="font-bold text-base text-white tracking-tight flex items-center gap-1.5">
               <span>مساعد الدعم الذكي</span>
             </h1>
-            <span className="text-xs text-[#76bc21] font-medium flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#76bc21] animate-pulse" />
+            <span className="text-xs text-[#76bc21] font-medium flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#76bc21]" />
               لوحة الإدارة المركزية
             </span>
           </div>
@@ -80,7 +80,7 @@ export const AdminLayout = () => {
         <nav className="flex-1 overflow-y-auto px-4 py-5 space-y-6">
           {navGroups.map((group, idx) => (
             <div key={idx} className="space-y-1.5">
-              <div className="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+              <div className="px-3 text-[11px] font-bold uppercase tracking-wider text-blue-200/60 mb-2">
                 {group.title}
               </div>
               {group.items.map((item) => {
@@ -92,11 +92,11 @@ export const AdminLayout = () => {
                     to={item.path}
                     className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                       isActive
-                        ? 'bg-[#76bc21] text-white shadow-md shadow-[#76bc21]/25 font-semibold'
-                        : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                        ? 'bg-[#76bc21] text-white shadow-sm font-semibold'
+                        : 'text-slate-200 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-blue-200/70'}`} />
                     <span>{item.name}</span>
                   </Link>
                 );
@@ -106,7 +106,7 @@ export const AdminLayout = () => {
         </nav>
 
         {/* User Card & Logout in Footer */}
-        <div className="p-4 border-t border-slate-800/80 bg-slate-950/50">
+        <div className="p-4 border-t border-[#001c3d] bg-[#001d40]">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 overflow-hidden">
               <div className="w-9 h-9 rounded-full bg-[#76bc21]/20 border border-[#76bc21]/40 text-[#76bc21] flex items-center justify-center font-bold text-sm shrink-0">
@@ -116,7 +116,7 @@ export const AdminLayout = () => {
                 <div className="text-sm font-semibold text-white truncate">
                   {user?.fullName || user?.username || 'مدير النظام'}
                 </div>
-                <div className="text-xs text-slate-400 truncate dir-ltr text-right">
+                <div className="text-xs text-blue-200/70 truncate dir-ltr text-right">
                   {user?.email}
                 </div>
               </div>
@@ -125,7 +125,7 @@ export const AdminLayout = () => {
             <button
               onClick={logout}
               title="تسجيل الخروج"
-              className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+              className="p-2 rounded-lg text-slate-300 hover:text-rose-300 hover:bg-rose-500/20 transition-colors cursor-pointer"
             >
               <LogOut className="w-5 h-5" />
             </button>
