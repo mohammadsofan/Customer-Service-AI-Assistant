@@ -101,6 +101,7 @@ public class KnowledgeScenarioRepository : IKnowledgeScenarioRepository
                     ScenarioId = existing.Id,
                     StepOrder = step.StepOrder,
                     StepText = step.StepText,
+                    Description = step.Description,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };

@@ -5,4 +5,5 @@ public class ResolutionStepDto
     public Guid Id { get; set; }
     public int StepOrder { get; set; }
     public string StepText { get; set; } = string.Empty;
+    public string? Description { get; set; }
 }

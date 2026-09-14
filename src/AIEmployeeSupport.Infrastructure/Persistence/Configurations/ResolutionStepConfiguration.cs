@@ -17,6 +17,10 @@ public class ResolutionStepConfiguration : IEntityTypeConfiguration<ResolutionSt
             .IsRequired()
             .HasMaxLength(2000);
 
+        builder.Property(r => r.Description)
+            .IsRequired(false)
+            .HasMaxLength(4000);
+
         builder.HasIndex(r => new { r.ScenarioId, r.StepOrder });
 
         builder.Property(r => r.CreatedAt)

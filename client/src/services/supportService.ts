@@ -4,12 +4,19 @@ export interface SubmitQuestionRequest {
     problem: string;
 }
 
+export interface DetailedStepDto {
+    order: number;
+    text: string;
+    description?: string;
+}
+
 export interface QuestionResponse {
     id: string;
     status: string; // 'New', 'Processing', 'Answered', 'NoAnswer', 'Failed', 'Closed'
     answered: boolean;
     answer?: string;
     steps?: string[];
+    detailedSteps?: DetailedStepDto[];
     confidenceScore?: number;
     sourceScenario?: string;
     escalated: boolean;

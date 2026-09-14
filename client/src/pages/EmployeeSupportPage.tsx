@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import supportService, { type QuestionResponse, type QuestionHistoryDto, type TopScenarioDto } from '../services/supportService';
+import supportService, { type QuestionResponse, type QuestionHistoryDto, type TopScenarioDto, type DetailedStepDto } from '../services/supportService';
+import { Modal } from '../components/Modal';
 import { 
   Bot, 
   Send, 
@@ -15,7 +16,8 @@ import {
   Check, 
   X,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Info
 } from 'lucide-react';
 
 type FlowState = 'NEW' | 'PROCESSING' | 'ANSWERED' | 'NO_ANSWER' | 'FAILED';
@@ -31,6 +33,7 @@ export const EmployeeSupportPage: React.FC = () => {
   const [flowState, setFlowState] = useState<FlowState>('NEW');
   const [problem, setProblem] = useState('');
   const [response, setResponse] = useState<QuestionResponse | null>(null);
+  const [selectedStepForDetails, setSelectedStepForDetails] = useState<DetailedStepDto | null>(null);
   const [error, setError] = useState('');
   const [history, setHistory] = useState<QuestionHistoryDto[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
@@ -94,6 +97,7 @@ export const EmployeeSupportPage: React.FC = () => {
     setFlowState('NEW');
     setProblem('');
     setResponse(null);
+    setSelectedStepForDetails(null);
     setError('');
   };
 
@@ -274,23 +278,66 @@ export const EmployeeSupportPage: React.FC = () => {
               </div>
 
               {/* Steps (if available) */}
-              {response.steps && response.steps.length > 0 && (
+              {((response.detailedSteps && response.detailedSteps.length > 0) || (response.steps && response.steps.length > 0)) && (
                 <div className="space-y-3">
-                  <div className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                    خطوات الحل الإجرائية:
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                      خطوات الحل الإجرائية:
+                    </span>
+                    <span className="text-[11px] text-slate-500 font-normal">
+                      (الخطوات التي تحتوي على تفاصيل إضافية قابلة للنقر)
+                    </span>
                   </div>
-                  <div className="space-y-2">
-                    {response.steps.map((step, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-start gap-3 p-3.5 rounded-xl bg-white border border-slate-200/80 text-sm"
-                      >
-                        <span className="w-6 h-6 rounded-full bg-[#76bc21]/15 text-[#3b680c] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                          {idx + 1}
-                        </span>
-                        <span className="text-slate-700 leading-relaxed">{step}</span>
-                      </div>
-                    ))}
+                  <div className="space-y-2.5">
+                    {(response.detailedSteps && response.detailedSteps.length > 0
+                      ? response.detailedSteps
+                      : response.steps!.map((s, i) => ({ order: i + 1, text: s, description: undefined }))
+                    ).map((stepItem, idx) => {
+                      const hasDesc = Boolean(stepItem.description && stepItem.description.trim().length > 0);
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => {
+                            if (hasDesc) {
+                              setSelectedStepForDetails(stepItem);
+                            }
+                          }}
+                          className={`flex items-start justify-between gap-3 p-3.5 rounded-xl border transition-all ${
+                            hasDesc
+                              ? 'bg-blue-50/40 border-blue-200/80 hover:bg-blue-50/80 hover:border-blue-300 cursor-pointer shadow-2xs hover:shadow-xs'
+                              : 'bg-white border-slate-200/80'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3 flex-1">
+                            <span className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 ${
+                              hasDesc ? 'bg-blue-600 text-white shadow-xs' : 'bg-[#76bc21]/15 text-[#3b680c]'
+                            }`}>
+                              {stepItem.order || idx + 1}
+                            </span>
+                            <div className="space-y-1">
+                              <span className="text-slate-800 leading-relaxed text-sm font-medium block">
+                                {stepItem.text}
+                              </span>
+                            </div>
+                          </div>
+
+                          {hasDesc && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedStepForDetails(stepItem);
+                              }}
+                              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-100 text-blue-800 hover:bg-blue-600 hover:text-white transition-all text-xs font-bold cursor-pointer shadow-2xs"
+                              title="اضغط لعرض تفاصيل الخطوة"
+                            >
+                              <Info className="w-3.5 h-3.5" />
+                              <span>اضغط للمزيد من التفاصيل</span>
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -454,6 +501,45 @@ export const EmployeeSupportPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Step Details Dialog */}
+      <Modal
+        isOpen={Boolean(selectedStepForDetails)}
+        onClose={() => setSelectedStepForDetails(null)}
+        title={`تفاصيل الخطوة رقم ${selectedStepForDetails?.order || ''}`}
+        className="max-w-xl"
+      >
+        {selectedStepForDetails && (
+          <div className="space-y-4 text-right" dir="rtl">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+              <span className="text-xs font-semibold text-slate-500">نص الخطوة الإجرائية:</span>
+              <p className="text-sm font-bold text-slate-800 leading-relaxed">
+                {selectedStepForDetails.text}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-blue-700 font-bold text-sm">
+                <Info className="w-4 h-4" />
+                <span>الشرح والتفاصيل الإضافية:</span>
+              </div>
+              <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-100 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
+                {selectedStepForDetails.description}
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedStepForDetails(null)}
+                className="px-5 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-sm font-bold transition-all cursor-pointer"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

@@ -80,7 +80,8 @@ public class KnowledgeService : IKnowledgeService
             {
                 Id = rs.Id,
                 StepOrder = rs.StepOrder,
-                StepText = rs.StepText
+                StepText = rs.StepText,
+                Description = rs.Description
             }).ToList() ?? new List<ResolutionStepDto>(),
             CreatedAt = scenario.CreatedAt,
             UpdatedAt = scenario.UpdatedAt
@@ -109,7 +110,10 @@ public class KnowledgeService : IKnowledgeService
             status = ScenarioStatus.Active;
         }
 
-        if (status == ScenarioStatus.Active && (request.ResolutionSteps == null || !request.ResolutionSteps.Any(s => !string.IsNullOrWhiteSpace(s))))
+        var hasValidSteps = (request.Steps != null && request.Steps.Any(s => !string.IsNullOrWhiteSpace(s.StepText)))
+            || (request.ResolutionSteps != null && request.ResolutionSteps.Any(s => !string.IsNullOrWhiteSpace(s)));
+
+        if (status == ScenarioStatus.Active && !hasValidSteps)
         {
             throw new ValidationException(new[]
             {
@@ -144,7 +148,23 @@ public class KnowledgeService : IKnowledgeService
             }
         }
 
-        if (request.ResolutionSteps != null)
+        if (request.Steps != null && request.Steps.Any())
+        {
+            for (int i = 0; i < request.Steps.Count; i++)
+            {
+                scenario.ResolutionSteps.Add(new ResolutionStep
+                {
+                    Id = Guid.NewGuid(),
+                    ScenarioId = scenario.Id,
+                    StepOrder = i + 1,
+                    StepText = request.Steps[i].StepText,
+                    Description = request.Steps[i].Description,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
+            }
+        }
+        else if (request.ResolutionSteps != null)
         {
             for (int i = 0; i < request.ResolutionSteps.Count; i++)
             {
@@ -154,6 +174,7 @@ public class KnowledgeService : IKnowledgeService
                     ScenarioId = scenario.Id,
                     StepOrder = i + 1,
                     StepText = request.ResolutionSteps[i],
+                    Description = null,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 });
@@ -162,6 +183,13 @@ public class KnowledgeService : IKnowledgeService
 
         await _scenarioRepository.CreateAsync(scenario, cancellationToken);
 
+        var stepsSnapshot = scenario.ResolutionSteps.OrderBy(r => r.StepOrder).Select(r => new
+        {
+            r.StepOrder,
+            r.StepText,
+            r.Description
+        });
+
         var version = new KnowledgeScenarioVersion
         {
             Id = Guid.NewGuid(),
@@ -169,7 +197,7 @@ public class KnowledgeService : IKnowledgeService
             Version = 1,
             Name = scenario.Name,
             Description = scenario.Description,
-            ResolutionStepsSnapshot = JsonSerializer.Serialize(request.ResolutionSteps ?? new List<string>()),
+            ResolutionStepsSnapshot = JsonSerializer.Serialize(stepsSnapshot),
             CreatedBy = userId,
             CreatedAt = DateTime.UtcNow
         };
@@ -197,7 +225,10 @@ public class KnowledgeService : IKnowledgeService
         var scenario = await _scenarioRepository.GetByIdAsync(scenarioId, cancellationToken);
         if (scenario == null) throw new Exception("Scenario not found");
 
-        if (scenario.Status == ScenarioStatus.Active && (request.ResolutionSteps == null || !request.ResolutionSteps.Any(s => !string.IsNullOrWhiteSpace(s))))
+        var hasValidSteps = (request.Steps != null && request.Steps.Any(s => !string.IsNullOrWhiteSpace(s.StepText)))
+            || (request.ResolutionSteps != null && request.ResolutionSteps.Any(s => !string.IsNullOrWhiteSpace(s)));
+
+        if (scenario.Status == ScenarioStatus.Active && !hasValidSteps)
         {
             throw new ValidationException(new[]
             {
@@ -228,7 +259,23 @@ public class KnowledgeService : IKnowledgeService
         }
 
         scenario.ResolutionSteps.Clear();
-        if (request.ResolutionSteps != null)
+        if (request.Steps != null && request.Steps.Any())
+        {
+            for (int i = 0; i < request.Steps.Count; i++)
+            {
+                scenario.ResolutionSteps.Add(new ResolutionStep
+                {
+                    Id = Guid.NewGuid(),
+                    ScenarioId = scenario.Id,
+                    StepOrder = i + 1,
+                    StepText = request.Steps[i].StepText,
+                    Description = request.Steps[i].Description,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
+            }
+        }
+        else if (request.ResolutionSteps != null)
         {
             for (int i = 0; i < request.ResolutionSteps.Count; i++)
             {
@@ -238,6 +285,7 @@ public class KnowledgeService : IKnowledgeService
                     ScenarioId = scenario.Id,
                     StepOrder = i + 1,
                     StepText = request.ResolutionSteps[i],
+                    Description = null,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 });
@@ -249,6 +297,13 @@ public class KnowledgeService : IKnowledgeService
         var existingVersions = await _versionRepository.GetByScenarioIdAsync(scenarioId, cancellationToken);
         int nextVersion = (existingVersions != null && existingVersions.Any()) ? existingVersions.Max(v => v.Version) + 1 : 1;
 
+        var stepsSnapshot = scenario.ResolutionSteps.OrderBy(r => r.StepOrder).Select(r => new
+        {
+            r.StepOrder,
+            r.StepText,
+            r.Description
+        });
+
         var version = new KnowledgeScenarioVersion
         {
             Id = Guid.NewGuid(),
@@ -256,7 +311,7 @@ public class KnowledgeService : IKnowledgeService
             Version = nextVersion,
             Name = scenario.Name,
             Description = scenario.Description,
-            ResolutionStepsSnapshot = JsonSerializer.Serialize(request.ResolutionSteps ?? new List<string>()),
+            ResolutionStepsSnapshot = JsonSerializer.Serialize(stepsSnapshot),
             CreatedBy = userId,
             CreatedAt = DateTime.UtcNow
         };

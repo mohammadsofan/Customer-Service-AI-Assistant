@@ -75,7 +75,7 @@ public class RAGService : IRAGService
             var scenario = await _scenarioRepository.GetByIdAsync(doc.Embedding.ScenarioId, cancellationToken);
             if (scenario != null)
             {
-                var steps = string.Join("\n", scenario.ResolutionSteps.OrderBy(s => s.StepOrder).Select(s => $"{s.StepOrder}. {s.StepText}"));
+                var steps = string.Join("\n", scenario.ResolutionSteps.OrderBy(s => s.StepOrder).Select(s => string.IsNullOrWhiteSpace(s.Description) ? $"{s.StepOrder}. {s.StepText}" : $"{s.StepOrder}. {s.StepText} (تفاصيل: {s.Description})"));
                 var categorySection = scenario.Category != null && !string.IsNullOrWhiteSpace(scenario.Category.Name)
                     ? $"Category: {scenario.Category.Name}\n"
                     : string.Empty;
@@ -139,13 +139,43 @@ public class RAGService : IRAGService
         await _questionRepository.UpdateAsync(question, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        var detailedSteps = new List<DetailedStepDto>();
+        if (topScenario?.ResolutionSteps != null && topScenario.ResolutionSteps.Any())
+        {
+            detailedSteps = topScenario.ResolutionSteps
+                .OrderBy(s => s.StepOrder)
+                .Select(s => new DetailedStepDto
+                {
+                    Order = s.StepOrder,
+                    Text = s.StepText,
+                    Description = s.Description
+                })
+                .ToList();
+        }
+        else if (aiResponse.Steps != null && aiResponse.Steps.Any())
+        {
+            detailedSteps = aiResponse.Steps
+                .Select((s, idx) => new DetailedStepDto
+                {
+                    Order = idx + 1,
+                    Text = s,
+                    Description = null
+                })
+                .ToList();
+        }
+
+        var legacySteps = (aiResponse.Steps != null && aiResponse.Steps.Any())
+            ? aiResponse.Steps
+            : detailedSteps.Select(d => d.Text).ToList();
+
         return new QuestionResponse
         {
             Id = question.Id,
             Status = question.Status.ToString(),
             Answered = true,
             Answer = question.AnswerText,
-            Steps = aiResponse.Steps,
+            Steps = legacySteps,
+            DetailedSteps = detailedSteps,
             ConfidenceScore = topResult.Similarity,
             SourceScenario = topScenario?.Name,
             Escalated = false

@@ -26,7 +26,11 @@ public class CreateScenarioRequestValidator : AbstractValidator<CreateScenarioRe
                                request.Status == "1" ||
                                request.Status == "نشط";
                 if (isActive)
-                    return steps != null && steps.Any(s => !string.IsNullOrWhiteSpace(s));
+                {
+                    var hasLegacySteps = steps != null && steps.Any(s => !string.IsNullOrWhiteSpace(s));
+                    var hasNewSteps = request.Steps != null && request.Steps.Any(s => !string.IsNullOrWhiteSpace(s.StepText));
+                    return hasLegacySteps || hasNewSteps;
+                }
                 return true;
             })
             .WithMessage("يجب إضافة خطوة حل واحدة على الأقل عند تفعيل السيناريو");

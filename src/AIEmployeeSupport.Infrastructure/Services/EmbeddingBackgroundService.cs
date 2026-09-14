@@ -124,7 +124,14 @@ public class EmbeddingBackgroundService : BackgroundService
                     var orderedSteps = embedding.Scenario.ResolutionSteps.OrderBy(s => s.StepOrder).ToList();
                     foreach (var step in orderedSteps)
                     {
-                        sb.AppendLine($"{step.StepOrder}. {step.StepText}");
+                        if (!string.IsNullOrWhiteSpace(step.Description))
+                        {
+                            sb.AppendLine($"{step.StepOrder}. {step.StepText} - {step.Description}");
+                        }
+                        else
+                        {
+                            sb.AppendLine($"{step.StepOrder}. {step.StepText}");
+                        }
                     }
                 }
 

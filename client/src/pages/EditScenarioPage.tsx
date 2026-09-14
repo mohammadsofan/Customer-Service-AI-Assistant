@@ -22,8 +22,9 @@ export function EditScenarioPage() {
   const [categoryId, setCategoryId] = useState('');
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordInput, setKeywordInput] = useState('');
-  const [steps, setSteps] = useState<string[]>([]);
+  const [steps, setSteps] = useState<{ stepText: string; description?: string }[]>([]);
   const [stepInput, setStepInput] = useState('');
+  const [stepDescriptionInput, setStepDescriptionInput] = useState('');
   const [status, setStatus] = useState('Active');
   const [initialStatus, setInitialStatus] = useState('Active');
   const [isSaving, setIsSaving] = useState(false);
@@ -65,7 +66,10 @@ export function EditScenarioPage() {
       setStatus(scenarioStatus);
       setInitialStatus(scenarioStatus);
       
-      const loadedSteps = scenario.resolutionSteps?.map((s) => s.stepText) || [];
+      const loadedSteps = scenario.resolutionSteps?.map((s) => ({
+        stepText: s.stepText,
+        description: s.description || undefined
+      })) || [];
       setSteps(loadedSteps);
       setLoading(false);
     }).catch((err) => {
@@ -90,8 +94,12 @@ export function EditScenarioPage() {
   const handleAddStep = () => {
     const trimmed = stepInput.trim();
     if (trimmed) {
-      setSteps([...steps, trimmed]);
+      setSteps([...steps, {
+        stepText: trimmed,
+        description: stepDescriptionInput.trim() || undefined
+      }]);
       setStepInput('');
+      setStepDescriptionInput('');
     }
   };
 
@@ -119,7 +127,7 @@ export function EditScenarioPage() {
     };
 
     const isActive = isScenarioActive(status);
-    const validSteps = steps.filter((s) => typeof s === 'string' && s.trim().length > 0);
+    const validSteps = steps.filter((s) => s.stepText && s.stepText.trim().length > 0);
 
     if (isActive && validSteps.length === 0) {
       showError('تفعيل السيناريو يتطلب إضافة خطوة حل واحدة على الأقل لتمكين الذكاء الاصطناعي من الإجابة.', ['أضف خطوات حل مرتبة أو اضبط الحالة إلى "مسودة"'], 'تنبيه: خطوات الحل مطلوبة');
@@ -133,7 +141,8 @@ export function EditScenarioPage() {
         description: description.trim(),
         categoryId,
         keywords,
-        resolutionSteps: validSteps,
+        resolutionSteps: validSteps.map(s => s.stepText),
+        steps: validSteps,
       });
 
       if (status !== initialStatus) {
@@ -246,8 +255,10 @@ export function EditScenarioPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">خطوات الحل (المرتبة)</label>
-          <div className="flex gap-2 mb-2">
+          <div className="space-y-2 mb-3 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200">
             <Input
+              name="stepInput"
+              data-testid="step-input"
               value={stepInput}
               onChange={(e) => setStepInput(e.target.value)}
               onKeyDown={(e) => {
@@ -256,21 +267,37 @@ export function EditScenarioPage() {
                   handleAddStep();
                 }
               }}
-              placeholder="اكتب خطوة واضغط إضافة"
+              placeholder="اكتب عنوان أو نص خطوة الحل الرئيسية..."
             />
-            <Button type="button" onClick={handleAddStep} className="mt-1">
-              <Plus className="w-4 h-4 ml-1" />
-              إضافة
-            </Button>
+            <Textarea
+              rows={2}
+              value={stepDescriptionInput}
+              onChange={(e) => setStepDescriptionInput(e.target.value)}
+              placeholder="شرح أو تفاصيل إضافية اختيارية للخطوة (تظهر للموظف بنافذة منبثقة عند النقر عليها)"
+            />
+            <div className="flex justify-start">
+              <Button type="button" onClick={handleAddStep} data-testid="add-step-btn" size="sm">
+                <Plus className="w-4 h-4 ml-1" />
+                إضافة الخطوة
+              </Button>
+            </div>
           </div>
           {steps.length === 0 ? (
             <p className="text-xs text-gray-400">لم يتم إضافة خطوات بعد.</p>
           ) : (
             <ol className="list-decimal list-inside space-y-2">
               {steps.map((step, index) => (
-                <li key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded border">
-                  <span>{step}</span>
-                  <button type="button" onClick={() => handleRemoveStep(index)} className="text-red-500 hover:text-red-700">
+                <li key={index} className="flex justify-between items-start bg-gray-50 p-3 rounded-xl border border-slate-200">
+                  <div className="flex-1 ml-3 space-y-1">
+                    <div className="font-semibold text-slate-800 text-sm">{step.stepText}</div>
+                    {step.description && (
+                      <div className="text-xs text-slate-500 bg-white p-2 rounded-lg border border-slate-200/80 inline-flex items-center gap-1.5 mt-1">
+                        <span className="font-semibold text-blue-600">تفاصيل إضافية:</span>
+                        <span className="text-slate-600">{step.description}</span>
+                      </div>
+                    )}
+                  </div>
+                  <button type="button" onClick={() => handleRemoveStep(index)} className="text-red-500 hover:text-red-700 mt-1 cursor-pointer">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </li>

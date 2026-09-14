@@ -27,6 +27,12 @@ export interface ResolutionStep {
     id?: string;
     stepOrder: number;
     stepText: string;
+    description?: string;
+}
+
+export interface ScenarioStepInput {
+    stepText: string;
+    description?: string;
 }
 
 export interface Scenario {
@@ -53,6 +59,7 @@ export interface CreateScenarioDto {
     categoryId: string;
     keywords: string[];
     resolutionSteps: string[];
+    steps?: ScenarioStepInput[];
     status?: string;
 }
 
@@ -62,6 +69,7 @@ export interface UpdateScenarioDto {
     categoryId: string;
     keywords: string[];
     resolutionSteps: string[];
+    steps?: ScenarioStepInput[];
 }
 
 const knowledgeService = {
