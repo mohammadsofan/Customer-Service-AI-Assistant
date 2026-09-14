@@ -124,6 +124,28 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await dbContext.Database.EnsureCreatedAsync();
+    if (dbContext.Database.IsSqlServer())
+    {
+        await dbContext.Database.ExecuteSqlRawAsync(@"
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'RefreshTokens')
+            BEGIN
+                CREATE TABLE RefreshTokens (
+                    Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+                    UserId UNIQUEIDENTIFIER NOT NULL,
+                    TokenHash NVARCHAR(128) NOT NULL,
+                    CreatedAt DATETIME2 NOT NULL,
+                    ExpiresAt DATETIME2 NOT NULL,
+                    RevokedAt DATETIME2 NULL,
+                    ReplacedByTokenId UNIQUEIDENTIFIER NULL,
+                    CreatedByIp NVARCHAR(50) NULL,
+                    RevocationReason NVARCHAR(200) NULL,
+                    CONSTRAINT FK_RefreshTokens_Users_UserId FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
+                );
+                CREATE UNIQUE INDEX IX_RefreshTokens_TokenHash ON RefreshTokens(TokenHash);
+                CREATE INDEX IX_RefreshTokens_UserId ON RefreshTokens(UserId);
+            END
+        ");
+    }
     await DataSeeder.SeedAsync(dbContext, app.Configuration, app.Environment.IsDevelopment());
 }
 

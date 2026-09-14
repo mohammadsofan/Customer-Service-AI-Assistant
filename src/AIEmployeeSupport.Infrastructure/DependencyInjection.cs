@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IAIRequestLogRepository, AIRequestLogRepository>();
         services.AddScoped<IKnowledgeScenarioVersionRepository, KnowledgeScenarioVersionRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Services

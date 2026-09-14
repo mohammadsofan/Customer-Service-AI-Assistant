@@ -55,8 +55,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return data.user;
     };
 
-    const logout = () => {
-        authService.logout();
+    const logout = async () => {
+        await authService.logout();
         setToken(null);
         setUser(null);
         window.location.href = '/login';

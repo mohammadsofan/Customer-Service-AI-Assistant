@@ -26,7 +26,8 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
-        var response = await _authService.LoginAsync(request, cancellationToken);
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var response = await _authService.LoginAsync(request, ipAddress, cancellationToken);
         return Ok(response);
     }
 
@@ -34,8 +35,20 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<LoginResponse>> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
     {
-        var response = await _authService.RefreshTokenAsync(request, cancellationToken);
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var response = await _authService.RefreshTokenAsync(request, ipAddress, cancellationToken);
         return Ok(response);
+    }
+
+    [HttpPost("logout")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(request?.RefreshToken))
+        {
+            await _authService.LogoutAsync(request.RefreshToken, cancellationToken);
+        }
+        return Ok(new { message = "تم تسجيل الخروج بنجاح" });
     }
 
     [HttpGet("me")]
