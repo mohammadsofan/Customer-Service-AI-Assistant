@@ -71,8 +71,8 @@ export interface UnansweredQuestion {
 }
 
 const analyticsService = {
-    getOverview: async (): Promise<AnalyticsOverview> => {
-        const response = await api.get<any>('/analytics/overview');
+    getOverview: async (startDate?: string, endDate?: string): Promise<AnalyticsOverview> => {
+        const response = await api.get<any>('/analytics/overview', { params: { fromDate: startDate, toDate: endDate } });
         const raw = response.data || {};
         
         const total = raw.totalQuestions ?? 0;
@@ -107,8 +107,8 @@ const analyticsService = {
         const list = data?.questions || (Array.isArray(data) ? data : []);
         return list;
     },
-    getKnowledgeAnalytics: async (page = 1, pageSize = 8): Promise<PaginatedResult<KnowledgeAnalytics>> => {
-        const response = await api.get<any>('/analytics/knowledge', { params: { page, pageSize } });
+    getKnowledgeAnalytics: async (page = 1, pageSize = 8, startDate?: string, endDate?: string): Promise<PaginatedResult<KnowledgeAnalytics>> => {
+        const response = await api.get<any>('/analytics/knowledge', { params: { page, pageSize, fromDate: startDate, toDate: endDate } });
         const data = response.data;
         const list = Array.isArray(data) ? data : (data?.items || []);
         const totalCount = data?.totalCount ?? list.length;
@@ -123,16 +123,16 @@ const analyticsService = {
         }));
         return { items, totalCount, page, pageSize, totalPages };
     },
-    getCategoryAnalytics: async (page = 1, pageSize = 5): Promise<PaginatedResult<CategoryAnalytics>> => {
-        const response = await api.get<any>('/analytics/categories', { params: { page, pageSize } });
+    getCategoryAnalytics: async (page = 1, pageSize = 5, startDate?: string, endDate?: string): Promise<PaginatedResult<CategoryAnalytics>> => {
+        const response = await api.get<any>('/analytics/categories', { params: { page, pageSize, fromDate: startDate, toDate: endDate } });
         const data = response.data;
         const list = Array.isArray(data) ? data : (data?.items || []);
         const totalCount = data?.totalCount ?? list.length;
         const totalPages = data?.totalPages ?? Math.max(1, Math.ceil(totalCount / pageSize));
         return { items: list, totalCount, page, pageSize, totalPages };
     },
-    getUnanswered: async (page = 1, pageSize = 8, sortOrder = 'desc'): Promise<PaginatedResult<UnansweredQuestion>> => {
-        const response = await api.get<any>('/analytics/unanswered', { params: { page, pageSize, sortOrder } });
+    getUnanswered: async (page = 1, pageSize = 8, sortOrder = 'desc', startDate?: string, endDate?: string): Promise<PaginatedResult<UnansweredQuestion>> => {
+        const response = await api.get<any>('/analytics/unanswered', { params: { page, pageSize, sortOrder, fromDate: startDate, toDate: endDate } });
         const data = response.data;
         const list = data?.questions || (Array.isArray(data) ? data : (data?.items || []));
         const totalCount = data?.totalCount ?? list.length;

@@ -51,8 +51,16 @@ public class SupportQuestionRepository : ISupportQuestionRepository
         int page, int pageSize, CancellationToken cancellationToken = default)
         => GetAllAsync(page, pageSize, null, null, cancellationToken);
 
-    public async Task<(IEnumerable<SupportQuestion> Items, int TotalCount)> GetAllAsync(
+    public Task<(IEnumerable<SupportQuestion> Items, int TotalCount)> GetAllAsync(
         int page, int pageSize, QuestionStatus? status, DateTime? date, CancellationToken cancellationToken = default)
+    {
+        DateTime? fromDate = date?.Date;
+        DateTime? toDate = date.HasValue ? date.Value.Date.AddDays(1).AddTicks(-1) : null;
+        return GetAllAsync(page, pageSize, status, fromDate, toDate, cancellationToken);
+    }
+
+    public async Task<(IEnumerable<SupportQuestion> Items, int TotalCount)> GetAllAsync(
+        int page, int pageSize, QuestionStatus? status, DateTime? fromDate, DateTime? toDate, CancellationToken cancellationToken = default)
     {
         var query = _context.SupportQuestions.AsNoTracking()
             .Include(q => q.Employee)
@@ -64,11 +72,22 @@ public class SupportQuestionRepository : ISupportQuestionRepository
             query = query.Where(q => q.Status == status.Value);
         }
 
-        if (date.HasValue)
+        if (fromDate.HasValue)
         {
-            var targetDate = date.Value.Date;
-            var nextDate = targetDate.AddDays(1);
-            query = query.Where(q => q.CreatedAt >= targetDate && q.CreatedAt < nextDate);
+            query = query.Where(q => q.CreatedAt >= fromDate.Value);
+        }
+
+        if (toDate.HasValue)
+        {
+            if (toDate.Value.TimeOfDay == TimeSpan.Zero)
+            {
+                var nextDay = toDate.Value.Date.AddDays(1);
+                query = query.Where(q => q.CreatedAt < nextDay);
+            }
+            else
+            {
+                query = query.Where(q => q.CreatedAt <= toDate.Value);
+            }
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
@@ -80,10 +99,31 @@ public class SupportQuestionRepository : ISupportQuestionRepository
         return (items, totalCount);
     }
 
-    public async Task<IEnumerable<SupportQuestion>> GetUnansweredAsync(CancellationToken cancellationToken = default)
-        => await _context.SupportQuestions.AsNoTracking()
+    public async Task<IEnumerable<SupportQuestion>> GetUnansweredAsync(DateTime? fromDate = null, DateTime? toDate = null, CancellationToken cancellationToken = default)
+    {
+        var query = _context.SupportQuestions.AsNoTracking()
             .Include(q => q.Employee)
-            .Where(q => q.Status == QuestionStatus.New || q.Status == QuestionStatus.NoAnswer)
-            .OrderByDescending(q => q.CreatedAt)
+            .Where(q => q.Status == QuestionStatus.New || q.Status == QuestionStatus.NoAnswer);
+
+        if (fromDate.HasValue)
+        {
+            query = query.Where(q => q.CreatedAt >= fromDate.Value);
+        }
+
+        if (toDate.HasValue)
+        {
+            if (toDate.Value.TimeOfDay == TimeSpan.Zero)
+            {
+                var nextDay = toDate.Value.Date.AddDays(1);
+                query = query.Where(q => q.CreatedAt < nextDay);
+            }
+            else
+            {
+                query = query.Where(q => q.CreatedAt <= toDate.Value);
+            }
+        }
+
+        return await query.OrderByDescending(q => q.CreatedAt)
             .ToListAsync(cancellationToken);
+    }
 }

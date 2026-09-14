@@ -8,11 +8,19 @@ import analyticsService, {
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { DataTable } from '../components/DataTable';
+import { DateFilterBar, type DateFilterRange } from '../components/DateFilterBar';
 import { Layers } from 'lucide-react';
 
 export const AnalyticsPage = () => {
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
   
+  // Date filter state
+  const [dateFilter, setDateFilter] = useState<DateFilterRange>({
+    preset: 'all',
+    label: 'جميع الأوقات'
+  });
+  const [filterLoading, setFilterLoading] = useState(false);
+
   // Categories state
   const [categories, setCategories] = useState<CategoryAnalytics[]>([]);
   const [categoryPage, setCategoryPage] = useState(1);
@@ -38,49 +46,60 @@ export const AnalyticsPage = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Initial load
+  // Fetch all analytics data with date filtering
+  const fetchAllData = async (range: DateFilterRange = dateFilter, isInitial = false) => {
+    try {
+      if (isInitial) setInitialLoading(true);
+      else setFilterLoading(true);
+
+      const [overviewData, catRes, knowRes, unansRes] = await Promise.all([
+        analyticsService.getOverview(range.startDate, range.endDate),
+        analyticsService.getCategoryAnalytics(1, 5, range.startDate, range.endDate),
+        analyticsService.getKnowledgeAnalytics(1, 8, range.startDate, range.endDate),
+        analyticsService.getUnanswered(1, 8, sortOrder, range.startDate, range.endDate)
+      ]);
+
+      setOverview(overviewData);
+
+      setCategories(catRes.items);
+      setCategoryPage(1);
+      setCategoryTotalPages(catRes.totalPages);
+      setCategoryTotalCount(catRes.totalCount);
+
+      setKnowledge(knowRes.items);
+      setKnowledgePage(1);
+      setKnowledgeTotalPages(knowRes.totalPages);
+      setKnowledgeTotalCount(knowRes.totalCount);
+
+      setUnanswered(unansRes.items);
+      setUnansweredPage(1);
+      setUnansweredTotalPages(unansRes.totalPages);
+      setUnansweredTotalCount(unansRes.totalCount);
+
+      setError(null);
+    } catch (err) {
+      setError('حدث خطأ أثناء تحميل البيانات');
+    } finally {
+      if (isInitial) setInitialLoading(false);
+      else setFilterLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        setInitialLoading(true);
-        const [overviewData, catRes, knowRes, unansRes] = await Promise.all([
-          analyticsService.getOverview(),
-          analyticsService.getCategoryAnalytics(1, 5),
-          analyticsService.getKnowledgeAnalytics(1, 8),
-          analyticsService.getUnanswered(1, 8, sortOrder)
-        ]);
-
-        setOverview(overviewData);
-
-        setCategories(catRes.items);
-        setCategoryTotalPages(catRes.totalPages);
-        setCategoryTotalCount(catRes.totalCount);
-
-        setKnowledge(knowRes.items);
-        setKnowledgeTotalPages(knowRes.totalPages);
-        setKnowledgeTotalCount(knowRes.totalCount);
-
-        setUnanswered(unansRes.items);
-        setUnansweredTotalPages(unansRes.totalPages);
-        setUnansweredTotalCount(unansRes.totalCount);
-
-        setError(null);
-      } catch (err) {
-        setError('حدث خطأ أثناء تحميل البيانات');
-      } finally {
-        setInitialLoading(false);
-      }
-    };
-
-    fetchInitialData();
+    fetchAllData(dateFilter, true);
   }, []);
+
+  const handleDateFilterChange = (range: DateFilterRange) => {
+    setDateFilter(range);
+    fetchAllData(range, false);
+  };
 
   // Category page change
   const handleCategoryPageChange = async (newPage: number) => {
     setCategoryPage(newPage);
     try {
       setCategoryLoading(true);
-      const res = await analyticsService.getCategoryAnalytics(newPage, 5);
+      const res = await analyticsService.getCategoryAnalytics(newPage, 5, dateFilter.startDate, dateFilter.endDate);
       setCategories(res.items);
       setCategoryTotalPages(res.totalPages);
       setCategoryTotalCount(res.totalCount);
@@ -96,7 +115,7 @@ export const AnalyticsPage = () => {
     setKnowledgePage(newPage);
     try {
       setKnowledgeLoading(true);
-      const res = await analyticsService.getKnowledgeAnalytics(newPage, 8);
+      const res = await analyticsService.getKnowledgeAnalytics(newPage, 8, dateFilter.startDate, dateFilter.endDate);
       setKnowledge(res.items);
       setKnowledgeTotalPages(res.totalPages);
       setKnowledgeTotalCount(res.totalCount);
@@ -108,10 +127,10 @@ export const AnalyticsPage = () => {
   };
 
   // Unanswered page / sort change
-  const fetchUnansweredData = async (page: number, order: 'desc' | 'asc') => {
+  const fetchUnansweredData = async (page: number, order: 'desc' | 'asc', range: DateFilterRange = dateFilter) => {
     try {
       setUnansweredLoading(true);
-      const res = await analyticsService.getUnanswered(page, 8, order);
+      const res = await analyticsService.getUnanswered(page, 8, order, range.startDate, range.endDate);
       setUnanswered(res.items);
       setUnansweredTotalPages(res.totalPages);
       setUnansweredTotalCount(res.totalCount);
@@ -124,18 +143,18 @@ export const AnalyticsPage = () => {
 
   const handleUnansweredPageChange = (newPage: number) => {
     setUnansweredPage(newPage);
-    fetchUnansweredData(newPage, sortOrder);
+    fetchUnansweredData(newPage, sortOrder, dateFilter);
   };
 
   const handleSortOrderToggle = () => {
     const nextOrder = sortOrder === 'desc' ? 'asc' : 'desc';
     setSortOrder(nextOrder);
     setUnansweredPage(1);
-    fetchUnansweredData(1, nextOrder);
+    fetchUnansweredData(1, nextOrder, dateFilter);
   };
 
   if (initialLoading) return <LoadingState />;
-  if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
+  if (error) return <ErrorState message={error} onRetry={() => fetchAllData(dateFilter, true)} />;
   if (!overview) return null;
 
   const categoryColumns = [
@@ -289,7 +308,10 @@ export const AnalyticsPage = () => {
     <div className="p-6 rtl bg-[#f5f5f7] min-h-screen" dir="rtl">
       <h2 className="text-2xl font-bold mb-6 text-gray-900">التحليلات والتقارير</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      {/* Date Filter Bar */}
+      <DateFilterBar onFilterChange={handleDateFilterChange} className="mb-6" />
+
+      <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 transition-opacity duration-200 ${filterLoading ? 'opacity-60 pointer-events-none' : ''}`}>
         <MetricCard title="إجمالي الأسئلة" value={overview.totalQuestions || 0} color="text-slate-900" />
         <MetricCard title="تمت الإجابة" value={overview.answeredQuestions || 0} color="text-[#3b680c]" />
         <MetricCard title="لا توجد إجابة" value={overview.unansweredQuestions || 0} color="text-[#b34f07]" />

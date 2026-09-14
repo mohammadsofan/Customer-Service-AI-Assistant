@@ -25,9 +25,23 @@ public class AnalyticsService : IAnalyticsService
         _requestLogRepository = requestLogRepository;
     }
 
-    public async Task<OverviewAnalyticsDto> GetOverviewAsync(CancellationToken cancellationToken = default)
+    private static (DateTime? start, DateTime? end) NormalizeDateRange(DateTime? fromDate, DateTime? toDate)
     {
-        var questionsTuple = await _questionRepository.GetAllAsync(1, int.MaxValue, cancellationToken);
+        DateTime? start = fromDate;
+        DateTime? end = toDate;
+
+        if (end.HasValue && end.Value.TimeOfDay == TimeSpan.Zero)
+        {
+            end = end.Value.Date.AddDays(1).AddTicks(-1);
+        }
+
+        return (start, end);
+    }
+
+    public async Task<OverviewAnalyticsDto> GetOverviewAsync(DateTime? fromDate = null, DateTime? toDate = null, CancellationToken cancellationToken = default)
+    {
+        var (start, end) = NormalizeDateRange(fromDate, toDate);
+        var questionsTuple = await _questionRepository.GetAllAsync(1, int.MaxValue, null, start, end, cancellationToken);
         var questions = questionsTuple.Items.ToList();
         
         var today = DateTime.UtcNow.Date;
@@ -35,27 +49,27 @@ public class AnalyticsService : IAnalyticsService
         var answered = questions.Count(q => q.Status == QuestionStatus.Answered && q.AnsweredByAI);
         var escalated = questions.Count(q => q.Escalated);
         var total = questions.Count;
-        
+        var processingTimes = questions.Where(q => q.ProcessingTimeMs.HasValue).Select(q => q.ProcessingTimeMs!.Value).ToList();
+        var confidenceScores = questions.Where(q => q.ConfidenceScore.HasValue).Select(q => q.ConfidenceScore!.Value).ToList();
+
         return new OverviewAnalyticsDto
         {
             TotalQuestions = total,
-            TodayQuestions = questions.Count(q => q.CreatedAt.Date == today),
+            TodayQuestions = fromDate.HasValue || toDate.HasValue ? total : questions.Count(q => q.CreatedAt.Date == today),
             AnsweredCount = answered,
-            NoAnswerCount = questions.Count(q => !q.AnsweredByAI && q.Status != QuestionStatus.New),
+            NoAnswerCount = questions.Count(q => (!q.AnsweredByAI && q.Status != QuestionStatus.New) || q.Status == QuestionStatus.NoAnswer),
             EscalatedCount = escalated,
-            AvgResponseTimeMs = questions.Where(q => q.ProcessingTimeMs.HasValue).Average(q => q.ProcessingTimeMs) ?? 0,
-            AvgSimilarityScore = questions.Where(q => q.ConfidenceScore.HasValue).Average(q => q.ConfidenceScore) ?? 0,
-            AnswerRate = total > 0 ? (double)answered / total : 0
+            AvgResponseTimeMs = processingTimes.Any() ? Math.Round(processingTimes.Average(), 2) : 0,
+            AvgSimilarityScore = confidenceScores.Any() ? Math.Round(confidenceScores.Average(), 4) : 0,
+            AnswerRate = total > 0 ? Math.Round((double)answered / total, 4) : 0
         };
     }
 
     public async Task<QuestionAnalyticsDto> GetQuestionAnalyticsAsync(DateTime? fromDate = null, DateTime? toDate = null, CancellationToken cancellationToken = default)
     {
-        var questionsTuple = await _questionRepository.GetAllAsync(1, int.MaxValue, cancellationToken);
+        var (start, end) = NormalizeDateRange(fromDate, toDate);
+        var questionsTuple = await _questionRepository.GetAllAsync(1, int.MaxValue, null, start, end, cancellationToken);
         var query = questionsTuple.Items.AsEnumerable();
-
-        if (fromDate.HasValue) query = query.Where(q => q.CreatedAt >= fromDate.Value);
-        if (toDate.HasValue) query = query.Where(q => q.CreatedAt <= toDate.Value);
 
         return new QuestionAnalyticsDto
         {
@@ -78,12 +92,13 @@ public class AnalyticsService : IAnalyticsService
     }
 
     public async Task<PaginatedResponse<KnowledgeAnalyticsDto>> GetKnowledgeAnalyticsAsync(
-        int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+        int page = 1, int pageSize = 10, DateTime? fromDate = null, DateTime? toDate = null, CancellationToken cancellationToken = default)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var (questionsTuple, _) = await _questionRepository.GetAllAsync(1, int.MaxValue, cancellationToken);
+        var (start, end) = NormalizeDateRange(fromDate, toDate);
+        var (questionsTuple, _) = await _questionRepository.GetAllAsync(1, int.MaxValue, null, start, end, cancellationToken);
         var scenarioStats = questionsTuple
             .Where(q => q.ScenarioId.HasValue)
             .GroupBy(q => q.ScenarioId.Value)
@@ -109,7 +124,7 @@ public class AnalyticsService : IAnalyticsService
                 ScenarioName = s.Name,
                 CategoryName = s.Category?.Name ?? "غير مصنف",
                 RetrievalCount = hasStats ? stats!.Count : 0,
-                AvgSimilarityScore = hasStats ? stats!.AvgSimilarityScore : 0,
+                AvgSimilarityScore = hasStats ? Math.Round(stats!.AvgSimilarityScore, 4) : 0,
                 LastUsed = hasStats ? stats!.LastUsed : null
             };
         }).ToList();
@@ -124,14 +139,16 @@ public class AnalyticsService : IAnalyticsService
     }
 
     public async Task<PaginatedResponse<CategoryAnalyticsDto>> GetCategoryAnalyticsAsync(
-        int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+        int page = 1, int pageSize = 10, DateTime? fromDate = null, DateTime? toDate = null, CancellationToken cancellationToken = default)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         var categories = (await _categoryRepository.GetAllAsync(cancellationToken)).ToList();
         var (scenarios, _) = await _scenarioRepository.GetAllAsync(1, int.MaxValue, null, null, cancellationToken);
-        var (questions, _) = await _questionRepository.GetAllAsync(1, int.MaxValue, cancellationToken);
+
+        var (start, end) = NormalizeDateRange(fromDate, toDate);
+        var (questions, _) = await _questionRepository.GetAllAsync(1, int.MaxValue, null, start, end, cancellationToken);
         
         var scenariosList = scenarios.ToList();
         var questionsList = questions.ToList();
@@ -179,12 +196,13 @@ public class AnalyticsService : IAnalyticsService
     }
 
     public async Task<UnansweredAnalyticsDto> GetUnansweredAnalyticsAsync(
-        int page = 1, int pageSize = 10, string sortOrder = "desc", CancellationToken cancellationToken = default)
+        int page = 1, int pageSize = 10, string sortOrder = "desc", DateTime? fromDate = null, DateTime? toDate = null, CancellationToken cancellationToken = default)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var unansweredQuestions = await _questionRepository.GetUnansweredAsync(cancellationToken);
+        var (start, end) = NormalizeDateRange(fromDate, toDate);
+        var unansweredQuestions = (await _questionRepository.GetUnansweredAsync(start, end, cancellationToken)).ToList();
         
         var query = unansweredQuestions
             .GroupBy(q => q.QuestionText.ToLowerInvariant().Trim())

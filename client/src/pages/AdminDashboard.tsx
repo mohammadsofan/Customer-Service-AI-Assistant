@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import analyticsService, { type AnalyticsOverview } from '../services/analyticsService';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
+import { DateFilterBar, type DateFilterRange } from '../components/DateFilterBar';
 import { 
   MessageSquare, 
   CheckCircle2, 
@@ -21,12 +22,19 @@ import { Link } from 'react-router-dom';
 export const AdminDashboard = () => {
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
   const [loading, setLoading] = useState(true);
+  const [filterLoading, setFilterLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState<DateFilterRange>({
+    preset: 'all',
+    label: 'جميع الأوقات'
+  });
 
-  const fetchOverview = async () => {
+  const fetchOverview = async (range: DateFilterRange = dateFilter, isInitial = false) => {
     try {
-      setLoading(true);
-      const data = await analyticsService.getOverview();
+      if (isInitial) setLoading(true);
+      else setFilterLoading(true);
+
+      const data = await analyticsService.getOverview(range.startDate, range.endDate);
       setOverview(data || {
         totalQuestions: 0,
         answeredQuestions: 0,
@@ -40,16 +48,22 @@ export const AdminDashboard = () => {
     } catch (err) {
       setError('حدث خطأ أثناء تحميل بيانات لوحة التحكم');
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
+      else setFilterLoading(false);
     }
   };
 
+  const handleFilterChange = (range: DateFilterRange) => {
+    setDateFilter(range);
+    fetchOverview(range, false);
+  };
+
   useEffect(() => {
-    fetchOverview();
+    fetchOverview(dateFilter, true);
   }, []);
 
   if (loading) return <LoadingState />;
-  if (error) return <ErrorState message={error} onRetry={fetchOverview} />;
+  if (error) return <ErrorState message={error} onRetry={() => fetchOverview(dateFilter, true)} />;
 
   const data = overview || {
     totalQuestions: 0,
@@ -68,6 +82,8 @@ export const AdminDashboard = () => {
         ? ((data.answeredQuestions || 0) / data.totalQuestions) * 100 
         : 100
   ).toFixed(1);
+
+  const isAllTime = dateFilter.preset === 'all';
 
   return (
     <div className="space-y-8" dir="rtl">
@@ -100,16 +116,26 @@ export const AdminDashboard = () => {
         </div>
       </div>
 
+      {/* Date Filter Bar */}
+      <DateFilterBar onFilterChange={handleFilterChange} className="mb-2" />
+
       {/* Metrics Cards Grid */}
-      <div>
-        <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <span>المؤشرات التشغيلية الحية</span>
-        </h3>
+      <div className={`transition-opacity duration-200 ${filterLoading ? 'opacity-60 pointer-events-none' : ''}`}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <span>المؤشرات التشغيلية الحية</span>
+            {!isAllTime && (
+              <span className="text-xs font-medium text-[#0055b8] bg-[#0055b8]/10 px-2.5 py-0.5 rounded-full border border-[#0055b8]/20">
+                {dateFilter.label}
+              </span>
+            )}
+          </h3>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <StatCard
             title="إجمالي الأسئلة"
             value={data.totalQuestions || 0}
-            subtitle="منذ إطلاق النظام"
+            subtitle={isAllTime ? "منذ إطلاق النظام" : `في الفترة (${dateFilter.label})`}
             icon={MessageSquare}
             color="blue"
           />
@@ -123,21 +149,21 @@ export const AdminDashboard = () => {
           <StatCard
             title="تمت الإجابة بالذكاء"
             value={data.answeredQuestions || 0}
-            subtitle="تم حلها بنجاح عبر RAG"
+            subtitle={isAllTime ? "تم حلها بنجاح عبر RAG" : `تم حلها بنجاح في الفترة`}
             icon={CheckCircle2}
             color="emerald"
           />
           <StatCard
             title="تم التصعيد لـ Back Office"
             value={data.escalated || 0}
-            subtitle="لا توجد معرفة مطابقة كافية"
+            subtitle={isAllTime ? "لا توجد معرفة مطابقة كافية" : `تم تصعيدها في الفترة`}
             icon={AlertCircle}
             color="rose"
           />
           <StatCard
             title="نسبة نجاح الإجابة"
             value={`${successPercentage}%`}
-            subtitle="معدل الدقة والاعتماد"
+            subtitle={isAllTime ? "معدل الدقة والاعتماد" : `معدل الدقة في الفترة`}
             icon={TrendingUp}
             color="indigo"
           />
@@ -151,7 +177,7 @@ export const AdminDashboard = () => {
           <StatCard
             title="أسئلة بدون إجابة"
             value={data.unansweredQuestions || 0}
-            subtitle="تتطلب إضافة سيناريوهات جديدة"
+            subtitle={isAllTime ? "تتطلب إضافة سيناريوهات جديدة" : `غير مجابة في الفترة`}
             icon={AlertCircle}
             color="orange"
           />
