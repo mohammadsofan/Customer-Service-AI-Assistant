@@ -57,10 +57,13 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8 sm:p-10 transition-all duration-300">
+    <div className="bg-white rounded-3xl shadow-xl shadow-slate-300/40 border border-slate-200/90 p-8 sm:p-10 transition-all duration-300 relative overflow-hidden">
+      {/* Top Brand Stripe */}
+      <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#0055b8] via-[#76bc21] to-[#f4771d]" />
+
       {/* Header & Logo */}
-      <div className="text-center space-y-3 mb-8">
-        <div className="inline-flex items-center justify-center w-18 h-18 rounded-2xl bg-white shadow-lg shadow-black/5 border border-slate-100 p-2 mb-1">
+      <div className="text-center space-y-3 mb-8 pt-1">
+        <div className="inline-flex items-center justify-center w-18 h-18 rounded-2xl bg-white shadow-sm border border-slate-200/80 p-2 mb-1">
           <img src="/brand/emblem.png" alt="Emblem" className="w-full h-full object-contain rounded-xl" />
         </div>
         <div>
