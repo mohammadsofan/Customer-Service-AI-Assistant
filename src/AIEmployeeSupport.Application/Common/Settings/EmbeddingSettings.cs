@@ -6,4 +6,5 @@ public class EmbeddingSettings
     public string Provider { get; set; } = "OpenAI";
     public string ApiKey { get; set; } = string.Empty;
     public string ModelName { get; set; } = "text-embedding-3-small";
+    public int RecoverySweepIntervalMinutes { get; set; } = 2;
 }

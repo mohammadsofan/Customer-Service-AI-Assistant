@@ -19,6 +19,7 @@ public class KnowledgeService : IKnowledgeService
     private readonly IKnowledgeScenarioVersionRepository _versionRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditService _auditService;
+    private readonly IEmbeddingQueue _embeddingQueue;
 
     public KnowledgeService(
         IKnowledgeScenarioRepository scenarioRepository,
@@ -27,7 +28,8 @@ public class KnowledgeService : IKnowledgeService
         IKnowledgeEmbeddingRepository embeddingRepository,
         IKnowledgeScenarioVersionRepository versionRepository,
         IUnitOfWork unitOfWork,
-        IAuditService auditService)
+        IAuditService auditService,
+        IEmbeddingQueue embeddingQueue)
     {
         _scenarioRepository = scenarioRepository;
         _categoryRepository = categoryRepository;
@@ -36,6 +38,7 @@ public class KnowledgeService : IKnowledgeService
         _versionRepository = versionRepository;
         _unitOfWork = unitOfWork;
         _auditService = auditService;
+        _embeddingQueue = embeddingQueue;
     }
 
     public async Task<PaginatedResponse<ScenarioListDto>> GetScenariosAsync(PaginatedRequest request, ScenarioStatus? status = null, Guid? categoryId = null, CancellationToken cancellationToken = default)
@@ -217,6 +220,8 @@ public class KnowledgeService : IKnowledgeService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         await _auditService.LogAsync(userId, AuditAction.ScenarioCreated, "KnowledgeScenario", scenario.Id, null, cancellationToken);
 
+        _embeddingQueue.QueueEmbeddingWork(scenario.Id);
+
         return await GetScenarioByIdAsync(scenario.Id, cancellationToken) ?? throw new Exception("Scenario creation failed.");
     }
 
@@ -340,6 +345,8 @@ public class KnowledgeService : IKnowledgeService
 
         await _auditService.LogAsync(userId, AuditAction.ScenarioUpdated, "KnowledgeScenario", scenario.Id, null, cancellationToken);
 
+        _embeddingQueue.QueueEmbeddingWork(scenario.Id);
+
         return await GetScenarioByIdAsync(scenario.Id, cancellationToken) ?? throw new Exception("Update failed.");
     }
 
@@ -387,6 +394,7 @@ public class KnowledgeService : IKnowledgeService
             embedding.UpdatedAt = DateTime.UtcNow;
             await _embeddingRepository.UpsertAsync(embedding, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+            _embeddingQueue.QueueEmbeddingWork(scenarioId);
         }
     }
 
