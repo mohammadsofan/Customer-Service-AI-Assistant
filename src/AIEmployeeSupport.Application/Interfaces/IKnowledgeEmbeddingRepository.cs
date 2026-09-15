@@ -11,4 +11,11 @@ public interface IKnowledgeEmbeddingRepository
         int topK,
         double threshold,
         CancellationToken cancellationToken = default);
+
+    Task<IEnumerable<(KnowledgeEmbedding Embedding, double Similarity)>> SearchSimilarAsync(
+        byte[] vector,
+        int topK,
+        double threshold,
+        string? queryText,
+        CancellationToken cancellationToken = default);
 }

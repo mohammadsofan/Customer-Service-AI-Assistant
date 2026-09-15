@@ -88,11 +88,7 @@ public class EmbeddingService : IEmbeddingService
         var vector = new float[dimensions];
         if (string.IsNullOrWhiteSpace(text)) return vector;
 
-        var normalized = text.ToLowerInvariant();
-        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, "[أإآ]", "ا");
-        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, "ة", "ه");
-        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, "ى", "ي");
-        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"[^\w\s]", " ");
+        var normalized = NormalizeArabicText(text);
 
         var words = normalized.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
         if (words.Length == 0) return vector;
@@ -129,5 +125,32 @@ public class EmbeddingService : IEmbeddingService
         }
 
         return vector;
+    }
+
+    public static string NormalizeArabicText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+        var normalized = text.ToLowerInvariant();
+
+        // 1. Strip Tashkeel (diacritics: Fatha, Damma, Kasra, Sukun, Tanwin, Shadda, etc.) & Tatweel
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, "[\u064B-\u065F\u0670\u0640]", "");
+
+        // 2. Standard Arabic letter normalization
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, "[أإآء]", "ا");
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, "ة", "ه");
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, "ى", "ي");
+
+        // 3. Conservative handling of attached preposition contraction 'ع الـ' / 'عالـ' -> 'على ال'
+        // High precision: word starts with 'عال' followed by 2+ Arabic letters
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\bعال(?=[\p{L}]{2,}\b)", "على ال");
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\bع\s+ال(?=[\p{L}]{2,}\b)", "على ال");
+
+        // 4. Conservative pronoun enclitic detachment on action verbs (e.g. 'افحصله' -> 'افحص له')
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\b(?<verb>[\p{L}]{3,})(?<clitic>له|لها)\b", "${verb} ${clitic}");
+
+        // 5. Clean punctuation / non-word characters
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"[^\w\s]", " ");
+
+        return normalized;
     }
 }
