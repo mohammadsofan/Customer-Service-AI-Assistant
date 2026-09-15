@@ -59,7 +59,19 @@ public class RAGService : IRAGService
 
         var questionVector = await _embeddingService.GenerateEmbeddingAsync(questionText, cancellationToken);
         var questionVectorBytes = questionVector.SelectMany(BitConverter.GetBytes).ToArray();
-        var similarDocs = await _embeddingRepository.SearchSimilarAsync(questionVectorBytes, config.TopK, config.SimilarityThreshold, cancellationToken);
+        var similarDocs = (await _embeddingRepository.SearchSimilarAsync(questionVectorBytes, config.TopK, config.SimilarityThreshold, questionText, cancellationToken)).ToList();
+
+        if (!similarDocs.Any())
+        {
+            // Single-pass LLM Query Rewriting fallback for colloquial / indirect questions
+            var rewrittenQuery = await _failoverService.RewriteQueryWithFailoverAsync(questionText, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(rewrittenQuery))
+            {
+                var rewrittenVector = await _embeddingService.GenerateEmbeddingAsync(rewrittenQuery, cancellationToken);
+                var rewrittenVectorBytes = rewrittenVector.SelectMany(BitConverter.GetBytes).ToArray();
+                similarDocs = (await _embeddingRepository.SearchSimilarAsync(rewrittenVectorBytes, config.TopK, config.SimilarityThreshold, rewrittenQuery, cancellationToken)).ToList();
+            }
+        }
 
         if (!similarDocs.Any())
         {

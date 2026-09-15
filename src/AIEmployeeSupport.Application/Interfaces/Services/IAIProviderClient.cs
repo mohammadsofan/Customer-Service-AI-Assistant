@@ -7,4 +7,5 @@ namespace AIEmployeeSupport.Application.Interfaces.Services;
 public interface IAIProviderClient
 {
     Task<AIResponse> GenerateAnswerAsync(AIRequest request, CancellationToken cancellationToken = default);
+    Task<string?> RewriteQueryAsync(string questionText, string modelName, CancellationToken cancellationToken = default);
 }

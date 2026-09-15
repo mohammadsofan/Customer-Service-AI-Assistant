@@ -127,4 +127,105 @@ public class AIFailoverService : IAIFailoverService
 
         throw new InvalidOperationException("All AI providers and models failed.", lastException);
     }
+
+    public async Task<string?> RewriteQueryWithFailoverAsync(string questionText, CancellationToken token = default)
+    {
+        if (string.IsNullOrWhiteSpace(questionText)) return null;
+
+        var config = await _configurationRepository.GetAsync(token);
+        if (config == null) return null;
+
+        var providers = (await _providerRepository.GetActiveAsync(token)).ToList();
+        if (!providers.Any()) return null;
+
+        var orderedProviders = providers
+            .OrderBy(p => p.Id == config.ActiveProviderId ? 0 : 1)
+            .ThenBy(p => p.FallbackPriority)
+            .ToList();
+
+        var triedProviders = new HashSet<Guid>();
+
+        // Bound total rewrite time to 3.5 seconds
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(3.5));
+        var linkedToken = timeoutCts.Token;
+
+        foreach (var provider in orderedProviders)
+        {
+            if (triedProviders.Contains(provider.Id)) continue;
+            triedProviders.Add(provider.Id);
+
+            string apiKey;
+            try
+            {
+                apiKey = _encryptionService.Decrypt(provider.EncryptedApiKey);
+            }
+            catch
+            {
+                apiKey = provider.EncryptedApiKey;
+            }
+
+            var client = _providerFactory.CreateClient(provider.ProviderType, apiKey, provider.BaseUrl);
+
+            var candidateModels = new List<string>();
+            if (provider.Id == config.ActiveProviderId && config.ActiveModel != null)
+            {
+                candidateModels.Add(config.ActiveModel.ModelName);
+                if (provider.Models != null)
+                {
+                    var fallbackModels = provider.Models
+                        .Where(m => m.IsActive && m.Id != config.ActiveModelId)
+                        .Select(m => m.ModelName)
+                        .Distinct();
+                    candidateModels.AddRange(fallbackModels);
+                }
+            }
+            else if (provider.Models != null && provider.Models.Any(m => m.IsActive))
+            {
+                candidateModels.AddRange(provider.Models.Where(m => m.IsActive).Select(m => m.ModelName).Distinct());
+            }
+
+            if (!candidateModels.Any())
+            {
+                candidateModels.Add(config.ActiveModel?.ModelName ?? "default");
+            }
+
+            foreach (var modelToUse in candidateModels)
+            {
+                try
+                {
+                    var rewritten = await client.RewriteQueryAsync(questionText, modelToUse, linkedToken);
+                    if (!string.IsNullOrWhiteSpace(rewritten))
+                    {
+                        return rewritten.Trim();
+                    }
+                }
+                catch (OperationCanceledException) when (!token.IsCancellationRequested)
+                {
+                    // 3.5s bounded timeout reached for rewrite
+                    if (!config.EnableAutoFailover)
+                    {
+                        return null;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (!config.EnableAutoFailover)
+                    {
+                        return null;
+                    }
+
+                    await _auditService.LogAsync(
+                        Guid.Empty,
+                        AuditAction.AIProviderFailoverTriggered,
+                        "AIModel",
+                        provider.Id,
+                        $"Query rewrite on model '{modelToUse}' (provider '{provider.Name}') failed: {ex.Message}. Falling back to next available model/provider.",
+                        token);
+                }
+            }
+        }
+
+        return null;
+    }
 }

@@ -56,4 +56,38 @@ Retrieved Knowledge:
         aiResponse.RawResponse = rawContent;
         return aiResponse;
     }
+
+    public override async Task<string?> RewriteQueryAsync(string questionText, string modelName, CancellationToken cancellationToken = default)
+    {
+        var payload = new
+        {
+            system_instruction = new { parts = new[] { new { text = QueryRewriteSystemPrompt } } },
+            contents = new[]
+            {
+                new { role = "user", parts = new[] { new { text = $"<USER_INPUT>\n{questionText}\n</USER_INPUT>" } } }
+            },
+            generationConfig = new
+            {
+                temperature = 0.1,
+                maxOutputTokens = 64,
+                responseMimeType = "application/json"
+            }
+        };
+
+        var url = $"{modelName}:generateContent?key={ApiKey}";
+        var response = await HttpClient.PostAsJsonAsync(url, payload, cancellationToken);
+        var rawContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        HandleHttpError(response, rawContent);
+
+        using var doc = JsonDocument.Parse(rawContent);
+        var contentStr = doc.RootElement
+            .GetProperty("candidates")[0]
+            .GetProperty("content")
+            .GetProperty("parts")[0]
+            .GetProperty("text")
+            .GetString()?.Trim() ?? string.Empty;
+
+        return ExtractSearchQueryFromJson(contentStr);
+    }
 }

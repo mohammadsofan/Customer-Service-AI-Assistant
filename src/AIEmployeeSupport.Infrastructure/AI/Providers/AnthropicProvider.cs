@@ -65,4 +65,32 @@ Retrieved Knowledge:
         aiResponse.RawResponse = rawContent;
         return aiResponse;
     }
+
+    public override async Task<string?> RewriteQueryAsync(string questionText, string modelName, CancellationToken cancellationToken = default)
+    {
+        var payload = new
+        {
+            model = modelName,
+            system = QueryRewriteSystemPrompt,
+            messages = new[]
+            {
+                new { role = "user", content = $"<USER_INPUT>\n{questionText}\n</USER_INPUT>" }
+            },
+            temperature = 0.1,
+            max_tokens = 64
+        };
+
+        var response = await HttpClient.PostAsJsonAsync("messages", payload, cancellationToken);
+        var rawContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        HandleHttpError(response, rawContent);
+
+        using var doc = JsonDocument.Parse(rawContent);
+        var contentStr = doc.RootElement
+            .GetProperty("content")[0]
+            .GetProperty("text")
+            .GetString()?.Trim() ?? string.Empty;
+
+        return ExtractSearchQueryFromJson(contentStr);
+    }
 }
