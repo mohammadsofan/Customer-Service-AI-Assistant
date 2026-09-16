@@ -523,16 +523,16 @@ export const EmployeeSupportPage: React.FC = () => {
                 <Info className="w-4 h-4" />
                 <span>الشرح والتفاصيل الإضافية:</span>
               </div>
-              <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-100 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
+              <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-100 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap max-h-[50vh] overflow-y-auto custom-scrollbar">
                 {selectedStepForDetails.description}
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-2 flex justify-end sticky bottom-0 bg-white border-t border-slate-100 pt-3">
               <button
                 type="button"
                 onClick={() => setSelectedStepForDetails(null)}
-                className="px-5 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-sm font-bold transition-all cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-sm font-bold transition-all cursor-pointer shadow-xs"
               >
                 إغلاق
               </button>
