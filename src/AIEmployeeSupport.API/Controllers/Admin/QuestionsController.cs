@@ -17,10 +17,14 @@ namespace AIEmployeeSupport.API.Controllers.Admin;
 public class QuestionsController : ControllerBase
 {
     private readonly ISupportQuestionRepository _questionRepository;
+    private readonly IAIRequestLogRepository _requestLogRepository;
 
-    public QuestionsController(ISupportQuestionRepository questionRepository)
+    public QuestionsController(
+        ISupportQuestionRepository questionRepository,
+        IAIRequestLogRepository requestLogRepository)
     {
         _questionRepository = questionRepository;
+        _requestLogRepository = requestLogRepository;
     }
 
     [HttpGet]
@@ -45,18 +49,26 @@ public class QuestionsController : ControllerBase
         }
 
         var (items, totalCount) = await _questionRepository.GetAllAsync(request.Page, request.PageSize, statusEnum, parsedDate, cancellationToken);
-        var dtos = items.Select(q => new QuestionHistoryDto
-        {
-            Id = q.Id,
-            EmployeeId = q.EmployeeId,
-            EmployeeName = q.Employee != null ? q.Employee.FullName : null,
-            EmployeeEmail = q.Employee != null ? q.Employee.Email : null,
-            QuestionText = q.QuestionText,
-            Status = q.Status.ToString(),
-            AnsweredByAI = q.AnsweredByAI,
-            ConfidenceScore = q.ConfidenceScore,
-            CreatedAt = q.CreatedAt,
-            CompletedAt = q.CompletedAt ?? q.CreatedAt
+        var questionIds = items.Select(q => q.Id).ToList();
+        var modelInfoDict = await _requestLogRepository.GetQuestionAIModelInfoAsync(questionIds, cancellationToken);
+
+        var dtos = items.Select(q => {
+            modelInfoDict.TryGetValue(q.Id, out var info);
+            return new QuestionHistoryDto
+            {
+                Id = q.Id,
+                EmployeeId = q.EmployeeId,
+                EmployeeName = q.Employee != null ? q.Employee.FullName : null,
+                EmployeeEmail = q.Employee != null ? q.Employee.Email : null,
+                QuestionText = q.QuestionText,
+                Status = q.Status.ToString(),
+                AnsweredByAI = q.AnsweredByAI,
+                ConfidenceScore = q.ConfidenceScore,
+                ProviderName = info.ProviderName,
+                ModelName = info.ModelName,
+                CreatedAt = q.CreatedAt,
+                CompletedAt = q.CompletedAt ?? q.CreatedAt
+            };
         }).ToList();
 
         return Ok(new PaginatedResponse<QuestionHistoryDto>
@@ -73,6 +85,10 @@ public class QuestionsController : ControllerBase
     {
         var q = await _questionRepository.GetByIdAsync(id, cancellationToken);
         if (q == null) return NotFound();
+
+        var modelInfoDict = await _requestLogRepository.GetQuestionAIModelInfoAsync(new[] { id }, cancellationToken);
+        modelInfoDict.TryGetValue(id, out var info);
+
         return Ok(new
         {
             q.Id,
@@ -82,6 +98,8 @@ public class QuestionsController : ControllerBase
             q.AnsweredByAI,
             q.Escalated,
             q.ConfidenceScore,
+            ProviderName = info.ProviderName,
+            ModelName = info.ModelName,
             q.ScenarioId,
             ScenarioName = q.Scenario?.Name,
             q.CreatedAt,

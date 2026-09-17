@@ -6,4 +6,5 @@ public interface IAIRequestLogRepository
 {
     Task CreateAsync(AIRequestLog requestLog, CancellationToken cancellationToken = default);
     Task<IEnumerable<AIRequestLog>> GetByQuestionIdAsync(Guid questionId, CancellationToken cancellationToken = default);
+    Task<Dictionary<Guid, (string? ProviderName, string? ModelName)>> GetQuestionAIModelInfoAsync(IEnumerable<Guid> questionIds, CancellationToken cancellationToken = default);
 }

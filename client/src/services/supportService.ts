@@ -36,6 +36,8 @@ export interface QuestionHistoryDto {
     status: string;
     answeredByAI: boolean;
     confidenceScore?: number;
+    providerName?: string;
+    modelName?: string;
     createdAt: string;
     completedAt?: string;
 }

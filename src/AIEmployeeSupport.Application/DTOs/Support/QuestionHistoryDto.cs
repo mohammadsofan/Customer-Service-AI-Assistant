@@ -10,6 +10,8 @@ public class QuestionHistoryDto
     public string Status { get; set; } = string.Empty;
     public bool AnsweredByAI { get; set; }
     public double? ConfidenceScore { get; set; }
+    public string? ProviderName { get; set; }
+    public string? ModelName { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
 }

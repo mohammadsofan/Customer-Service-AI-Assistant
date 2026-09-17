@@ -94,6 +94,20 @@ export const QuestionsPage = () => {
         );
       }
     },
+    {
+      key: 'aiModel',
+      header: 'مزود ونموذج الـ AI',
+      cell: (item: QuestionHistoryDto) => (
+        <div className="flex flex-col min-w-0">
+          <span className="font-semibold text-xs text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded w-fit truncate">
+            {item.providerName || 'غير متاح'}
+          </span>
+          <span className="text-xs text-gray-500 font-mono mt-0.5 truncate max-w-[140px]" title={item.modelName || 'غير محدد'}>
+            {item.modelName || '—'}
+          </span>
+        </div>
+      )
+    },
     { key: 'createdAt', header: 'تاريخ الإنشاء', cell: (item: QuestionHistoryDto) => new Date(item.createdAt).toLocaleDateString('ar-EG') },
     { 
       key: 'actions', 
@@ -179,6 +193,22 @@ export const QuestionsPage = () => {
               <strong className="block text-gray-700 mb-1">نص السؤال:</strong>
               <p className="text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200 leading-relaxed">{selectedQuestion.questionText}</p>
             </div>
+
+            {/* AI Provider & Model Info Section */}
+            <div className="bg-indigo-50/70 border border-indigo-100 p-3.5 rounded-xl space-y-2">
+              <strong className="block text-indigo-900 text-xs font-bold uppercase tracking-wider">معلومات نموذج الذكاء الاصطناعي المُستخدم:</strong>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-gray-500 text-xs block">المزود (Provider):</span>
+                  <span className="font-semibold text-gray-900">{selectedQuestion.providerName || 'غير متاح'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-xs block">النموذج (Model):</span>
+                  <span className="font-mono text-gray-900 text-xs bg-white px-2 py-0.5 rounded border border-indigo-200 inline-block">{selectedQuestion.modelName || 'غير محدد'}</span>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <strong className="block text-gray-700 mb-1">الحالة:</strong>
