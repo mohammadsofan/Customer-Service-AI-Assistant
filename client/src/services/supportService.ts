@@ -38,6 +38,8 @@ export interface QuestionHistoryDto {
     confidenceScore?: number;
     providerName?: string;
     modelName?: string;
+    processingTimeMs?: number;
+    modelDurationMs?: number;
     createdAt: string;
     completedAt?: string;
 }

@@ -25,11 +25,11 @@ public class AIRequestLogRepository : IAIRequestLogRepository
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync(cancellationToken);
 
-    public async Task<Dictionary<Guid, (string? ProviderName, string? ModelName)>> GetQuestionAIModelInfoAsync(
+    public async Task<Dictionary<Guid, (string? ProviderName, string? ModelName, long? ModelDurationMs)>> GetQuestionAIModelInfoAsync(
         IEnumerable<Guid> questionIds, CancellationToken cancellationToken = default)
     {
         var ids = questionIds.Distinct().ToList();
-        if (!ids.Any()) return new Dictionary<Guid, (string? ProviderName, string? ModelName)>();
+        if (!ids.Any()) return new Dictionary<Guid, (string? ProviderName, string? ModelName, long? ModelDurationMs)>();
 
         var query = from log in _context.AIRequestLogs.AsNoTracking()
                     where ids.Contains(log.QuestionId)
@@ -42,17 +42,18 @@ public class AIRequestLogRepository : IAIRequestLogRepository
                     {
                         log.QuestionId,
                         ProviderName = provider != null ? provider.Name : null,
-                        ModelName = model != null ? model.ModelName : null
+                        ModelName = model != null ? model.ModelName : null,
+                        ModelDurationMs = (long?)log.DurationMs
                     };
 
         var list = await query.ToListAsync(cancellationToken);
-        var result = new Dictionary<Guid, (string? ProviderName, string? ModelName)>();
+        var result = new Dictionary<Guid, (string? ProviderName, string? ModelName, long? ModelDurationMs)>();
 
         foreach (var item in list)
         {
             if (!result.ContainsKey(item.QuestionId))
             {
-                result[item.QuestionId] = (item.ProviderName, item.ModelName);
+                result[item.QuestionId] = (item.ProviderName, item.ModelName, item.ModelDurationMs);
             }
         }
 

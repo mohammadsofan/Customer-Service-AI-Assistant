@@ -55,6 +55,14 @@ export const QuestionsPage = () => {
     Closed: { label: 'مغلق', bg: 'bg-gray-100', text: 'text-gray-800' }
   };
 
+  const formatMs = (ms?: number | null) => {
+    if (ms === undefined || ms === null) return 'غير متاح';
+    if (ms >= 1000) {
+      return `${(ms / 1000).toFixed(2)} ثانية (${ms.toLocaleString()} ms)`;
+    }
+    return `${ms} ms`;
+  };
+
   const columns = [
     { 
       key: 'questionText', 
@@ -105,6 +113,11 @@ export const QuestionsPage = () => {
           <span className="text-xs text-gray-500 font-mono mt-0.5 truncate max-w-[140px]" title={item.modelName || 'غير محدد'}>
             {item.modelName || '—'}
           </span>
+          {item.processingTimeMs !== undefined && item.processingTimeMs !== null && (
+            <span className="text-[10px] text-gray-400 font-mono mt-0.5">
+              ⚡ {item.processingTimeMs >= 1000 ? `${(item.processingTimeMs / 1000).toFixed(1)}s` : `${item.processingTimeMs}ms`}
+            </span>
+          )}
         </div>
       )
     },
@@ -194,9 +207,9 @@ export const QuestionsPage = () => {
               <p className="text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200 leading-relaxed">{selectedQuestion.questionText}</p>
             </div>
 
-            {/* AI Provider & Model Info Section */}
-            <div className="bg-indigo-50/70 border border-indigo-100 p-3.5 rounded-xl space-y-2">
-              <strong className="block text-indigo-900 text-xs font-bold uppercase tracking-wider">معلومات نموذج الذكاء الاصطناعي المُستخدم:</strong>
+            {/* AI Provider, Model & Timing Info Section */}
+            <div className="bg-indigo-50/70 border border-indigo-100 p-3.5 rounded-xl space-y-3">
+              <strong className="block text-indigo-900 text-xs font-bold uppercase tracking-wider">معلومات الأداء وتوليد الذكاء الاصطناعي:</strong>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <span className="text-gray-500 text-xs block">المزود (Provider):</span>
@@ -205,6 +218,14 @@ export const QuestionsPage = () => {
                 <div>
                   <span className="text-gray-500 text-xs block">النموذج (Model):</span>
                   <span className="font-mono text-gray-900 text-xs bg-white px-2 py-0.5 rounded border border-indigo-200 inline-block">{selectedQuestion.modelName || 'غير محدد'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-xs block">وقت استجابة النموذج (Model Time):</span>
+                  <span className="font-semibold text-indigo-700 font-mono text-xs">{formatMs(selectedQuestion.modelDurationMs)}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-xs block">الوقت الكلي للإجابة (Total Time):</span>
+                  <span className="font-semibold text-emerald-700 font-mono text-xs">{formatMs(selectedQuestion.processingTimeMs)}</span>
                 </div>
               </div>
             </div>

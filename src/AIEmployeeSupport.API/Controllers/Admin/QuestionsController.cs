@@ -66,6 +66,8 @@ public class QuestionsController : ControllerBase
                 ConfidenceScore = q.ConfidenceScore,
                 ProviderName = info.ProviderName,
                 ModelName = info.ModelName,
+                ProcessingTimeMs = q.ProcessingTimeMs,
+                ModelDurationMs = info.ModelDurationMs,
                 CreatedAt = q.CreatedAt,
                 CompletedAt = q.CompletedAt ?? q.CreatedAt
             };
@@ -104,7 +106,8 @@ public class QuestionsController : ControllerBase
             ScenarioName = q.Scenario?.Name,
             q.CreatedAt,
             q.CompletedAt,
-            q.ProcessingTimeMs,
+            ProcessingTimeMs = q.ProcessingTimeMs,
+            ModelDurationMs = info.ModelDurationMs,
             EmployeeId = q.EmployeeId,
             EmployeeName = q.Employee?.FullName,
             EmployeeEmail = q.Employee?.Email
