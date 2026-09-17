@@ -57,6 +57,7 @@ public class RAGService : IRAGService
         var config = await _configRepository.GetAsync(cancellationToken);
         if (config == null) throw new InvalidOperationException("AI configuration not found.");
 
+        var embeddingSw = Stopwatch.StartNew();
         var questionVector = await _embeddingService.GenerateEmbeddingAsync(questionText, cancellationToken);
         var questionVectorBytes = questionVector.SelectMany(BitConverter.GetBytes).ToArray();
         var similarDocs = (await _embeddingRepository.SearchSimilarAsync(questionVectorBytes, config.TopK, config.SimilarityThreshold, questionText, cancellationToken)).ToList();
@@ -72,6 +73,7 @@ public class RAGService : IRAGService
                 similarDocs = (await _embeddingRepository.SearchSimilarAsync(rewrittenVectorBytes, config.TopK, config.SimilarityThreshold, rewrittenQuery, cancellationToken)).ToList();
             }
         }
+        embeddingSw.Stop();
 
         if (!similarDocs.Any())
         {
@@ -113,6 +115,7 @@ public class RAGService : IRAGService
         };
 
         AIResponse aiResponse = null!;
+        var llmSw = Stopwatch.StartNew();
         try
         {
             aiResponse = await _failoverService.GenerateAnswerWithFailoverAsync(aiRequest, cancellationToken);
@@ -121,6 +124,7 @@ public class RAGService : IRAGService
         {
             return await EscalateQuestion(question, null, stopwatch.ElapsedMilliseconds, cancellationToken);
         }
+        llmSw.Stop();
 
         var log = new AIRequestLog
         {
@@ -128,7 +132,7 @@ public class RAGService : IRAGService
             QuestionId = question.Id,
             ProviderId = config.ActiveProviderId,
             ModelId = config.ActiveModelId,
-            DurationMs = stopwatch.ElapsedMilliseconds,
+            DurationMs = llmSw.ElapsedMilliseconds,
             Success = aiResponse.Answered,
             CreatedAt = DateTime.UtcNow,
             IsFailover = false // Could be evaluated properly if tracked in AIFailoverService
@@ -145,6 +149,7 @@ public class RAGService : IRAGService
         question.AnsweredByAI = true;
         question.CompletedAt = DateTime.UtcNow;
         question.ProcessingTimeMs = stopwatch.ElapsedMilliseconds;
+        question.EmbeddingTimeMs = embeddingSw.ElapsedMilliseconds;
         question.ScenarioId = topScenario?.Id;
         question.ConfidenceScore = topResult.Similarity;
 

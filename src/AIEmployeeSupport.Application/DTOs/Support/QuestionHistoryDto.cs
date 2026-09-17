@@ -14,6 +14,7 @@ public class QuestionHistoryDto
     public string? ModelName { get; set; }
     public long? ProcessingTimeMs { get; set; }
     public long? ModelDurationMs { get; set; }
+    public long? EmbeddingTimeMs { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
 }

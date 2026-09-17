@@ -40,6 +40,7 @@ export interface QuestionHistoryDto {
     modelName?: string;
     processingTimeMs?: number;
     modelDurationMs?: number;
+    embeddingTimeMs?: number;
     createdAt: string;
     completedAt?: string;
 }

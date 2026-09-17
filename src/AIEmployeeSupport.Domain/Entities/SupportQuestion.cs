@@ -16,6 +16,7 @@ public class SupportQuestion
     public DateTime CreatedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
     public long? ProcessingTimeMs { get; set; }
+    public long? EmbeddingTimeMs { get; set; }
 
     // Navigation properties
     public User Employee { get; set; } = null!;

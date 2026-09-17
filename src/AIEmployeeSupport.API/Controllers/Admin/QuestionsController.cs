@@ -68,6 +68,7 @@ public class QuestionsController : ControllerBase
                 ModelName = info.ModelName,
                 ProcessingTimeMs = q.ProcessingTimeMs,
                 ModelDurationMs = info.ModelDurationMs,
+                EmbeddingTimeMs = q.EmbeddingTimeMs,
                 CreatedAt = q.CreatedAt,
                 CompletedAt = q.CompletedAt ?? q.CreatedAt
             };
@@ -108,6 +109,7 @@ public class QuestionsController : ControllerBase
             q.CompletedAt,
             ProcessingTimeMs = q.ProcessingTimeMs,
             ModelDurationMs = info.ModelDurationMs,
+            EmbeddingTimeMs = q.EmbeddingTimeMs,
             EmployeeId = q.EmployeeId,
             EmployeeName = q.Employee?.FullName,
             EmployeeEmail = q.Employee?.Email

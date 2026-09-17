@@ -224,6 +224,10 @@ export const QuestionsPage = () => {
                   <span className="font-semibold text-indigo-700 font-mono text-xs">{formatMs(selectedQuestion.modelDurationMs)}</span>
                 </div>
                 <div>
+                  <span className="text-gray-500 text-xs block">وقت التضمين والبحث (Embedding Time):</span>
+                  <span className="font-semibold text-sky-700 font-mono text-xs">{formatMs(selectedQuestion.embeddingTimeMs)}</span>
+                </div>
+                <div>
                   <span className="text-gray-500 text-xs block">الوقت الكلي للإجابة (Total Time):</span>
                   <span className="font-semibold text-emerald-700 font-mono text-xs">{formatMs(selectedQuestion.processingTimeMs)}</span>
                 </div>
