@@ -41,7 +41,7 @@ Retrieved Knowledge:
             }
         };
 
-        var url = $"{request.ModelName}:generateContent?key={ApiKey}";
+        var url = $"./{request.ModelName}:generateContent?key={ApiKey}";
         var response = await HttpClient.PostAsJsonAsync(url, payload, cancellationToken);
         var rawContent = await response.Content.ReadAsStringAsync(cancellationToken);
 
@@ -74,7 +74,7 @@ Retrieved Knowledge:
             }
         };
 
-        var url = $"{modelName}:generateContent?key={ApiKey}";
+        var url = $"./{modelName}:generateContent?key={ApiKey}";
         var response = await HttpClient.PostAsJsonAsync(url, payload, cancellationToken);
         var rawContent = await response.Content.ReadAsStringAsync(cancellationToken);
 
