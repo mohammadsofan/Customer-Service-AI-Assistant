@@ -23,6 +23,15 @@ public class EmbeddingService : IEmbeddingService
         _settings = settings.Value;
         _logger = logger;
 
+        if (string.IsNullOrEmpty(_settings.ApiKey))
+        {
+            var envKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+            if (!string.IsNullOrEmpty(envKey))
+            {
+                _settings.ApiKey = envKey;
+            }
+        }
+
         if (_settings.Provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
         {
             _httpClient.BaseAddress = new Uri("https://api.openai.com/v1/");
@@ -72,18 +81,52 @@ public class EmbeddingService : IEmbeddingService
                 var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
                 _logger.LogWarning("OpenAI Embedding API error: {StatusCode} - {Error}. Falling back to deterministic embedding.", response.StatusCode, errorContent);
             }
+            else if (_settings.Provider.Equals("Google", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(_settings.ApiKey))
+            {
+                var payload = new
+                {
+                    model = $"models/{_settings.ModelName}",
+                    content = new
+                    {
+                        parts = new[] { new { text = text } }
+                    }
+                };
+
+                var url = $"https://generativelanguage.googleapis.com/v1beta/models/{_settings.ModelName}:embedContent?key={_settings.ApiKey}";
+                var response = await _httpClient.PostAsJsonAsync(url, payload, cancellationToken);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var resultStr = await response.Content.ReadAsStringAsync(cancellationToken);
+                    using var doc = JsonDocument.Parse(resultStr);
+                    
+                    var dataArray = doc.RootElement.GetProperty("embedding").GetProperty("values");
+                    
+                    var floats = new float[dataArray.GetArrayLength()];
+                    var i = 0;
+                    foreach (var element in dataArray.EnumerateArray())
+                    {
+                        floats[i++] = element.GetSingle();
+                    }
+                    
+                    return floats;
+                }
+                
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogWarning("Google Embedding API error: {StatusCode} - {Error}. Falling back to deterministic embedding.", response.StatusCode, errorContent);
+            }
 
             // Built-in deterministic semantic feature embedding for Mock/offline environments
-            return GenerateDeterministicEmbedding(text, 256);
+            return GenerateDeterministicEmbedding(text, 3072);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to generate embedding via provider, using deterministic fallback.");
-            return GenerateDeterministicEmbedding(text, 256);
+            return GenerateDeterministicEmbedding(text, 3072);
         }
     }
 
-    private static float[] GenerateDeterministicEmbedding(string text, int dimensions = 256)
+    private static float[] GenerateDeterministicEmbedding(string text, int dimensions = 3072)
     {
         var vector = new float[dimensions];
         if (string.IsNullOrWhiteSpace(text)) return vector;

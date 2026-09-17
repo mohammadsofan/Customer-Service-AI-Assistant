@@ -90,19 +90,6 @@ public class KnowledgeEmbeddingRepository : IKnowledgeEmbeddingRepository
             {
                 scored.Add((candidate.Id, candidate.ScenarioId, similarity));
             }
-            // Controlled lexical fallback: candidate in semantic floor band [0.12, threshold) with verified keyword match
-            else if (similarity >= 0.12 && !string.IsNullOrWhiteSpace(queryText))
-            {
-                var lexScore = ComputeLexicalScore(queryText, candidate.ScenarioKeywords);
-                if (lexScore > 0.0)
-                {
-                    var hybridScore = (0.5 * similarity) + (0.5 * lexScore);
-                    if (hybridScore >= threshold)
-                    {
-                        scored.Add((candidate.Id, candidate.ScenarioId, hybridScore));
-                    }
-                }
-            }
         }
 
         var topKMatches = scored
@@ -183,60 +170,5 @@ public class KnowledgeEmbeddingRepository : IKnowledgeEmbeddingRepository
         return magnitude == 0 ? 0 : dotProduct / magnitude;
     }
 
-    private static double ComputeLexicalScore(string query, IEnumerable<string> scenarioKeywords)
-    {
-        var normQuery = EmbeddingService.NormalizeArabicText(query);
-        var queryTokens = new HashSet<string>(
-            normQuery.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                     .Where(w => w.Length >= 3)
-        );
-        if (queryTokens.Count == 0) return 0.0;
 
-        double maxScore = 0.0;
-        foreach (var kw in scenarioKeywords)
-        {
-            var normKw = EmbeddingService.NormalizeArabicText(kw);
-            if (string.IsNullOrWhiteSpace(normKw) || normKw.Length < 3) continue;
-
-            // 1. Exact Phrase Match: query contains the full keyword phrase
-            if (normKw.Length >= 4 && normQuery.Contains(normKw))
-            {
-                return 1.0;
-            }
-
-            // 2. Token overlap
-            var kwTokens = normKw.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                                 .Where(w => w.Length >= 3)
-                                 .ToList();
-            if (kwTokens.Count == 0) continue;
-
-            int matches = kwTokens.Count(kt => queryTokens.Contains(kt));
-            double score = 0.0;
-
-            if (kwTokens.Count == 1)
-            {
-                // Single token keyword (e.g. 'فاتورة'): must match directly
-                if (matches == 1) score = 0.6;
-            }
-            else
-            {
-                // Multi-token keyword (e.g. 'فواتير الجوال', 'قديش الفاتورة')
-                if (matches == kwTokens.Count)
-                {
-                    score = 0.9; // All tokens present
-                }
-                else if (matches >= 2 && (double)matches / kwTokens.Count >= 0.5)
-                {
-                    score = 0.5 * ((double)matches / kwTokens.Count);
-                }
-            }
-
-            if (score > maxScore)
-            {
-                maxScore = score;
-            }
-        }
-
-        return maxScore;
-    }
 }
