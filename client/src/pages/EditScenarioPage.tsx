@@ -8,7 +8,7 @@ import { Alert } from '../components/Alert';
 import { ErrorDialog } from '../components/ErrorDialog';
 import { LoadingState } from '../components/LoadingState';
 import knowledgeService, { Category, Scenario } from '../services/knowledgeService';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export function EditScenarioPage() {
@@ -25,6 +25,9 @@ export function EditScenarioPage() {
   const [steps, setSteps] = useState<{ stepText: string; description?: string }[]>([]);
   const [stepInput, setStepInput] = useState('');
   const [stepDescriptionInput, setStepDescriptionInput] = useState('');
+  const [editingStepIndex, setEditingStepIndex] = useState<number | null>(null);
+  const [editingStepText, setEditingStepText] = useState('');
+  const [editingStepDesc, setEditingStepDesc] = useState('');
   const [status, setStatus] = useState('Active');
   const [initialStatus, setInitialStatus] = useState('Active');
   const [isSaving, setIsSaving] = useState(false);
@@ -105,6 +108,32 @@ export function EditScenarioPage() {
 
   const handleRemoveStep = (index: number) => {
     setSteps(steps.filter((_, i) => i !== index));
+  };
+
+  const handleEditStepStart = (index: number) => {
+    const step = steps[index];
+    setEditingStepIndex(index);
+    setEditingStepText(step.stepText);
+    setEditingStepDesc(step.description || '');
+  };
+
+  const handleEditStepCancel = () => {
+    setEditingStepIndex(null);
+    setEditingStepText('');
+    setEditingStepDesc('');
+  };
+
+  const handleEditStepSave = () => {
+    const trimmedText = editingStepText.trim();
+    if (trimmedText && editingStepIndex !== null) {
+      const newSteps = [...steps];
+      newSteps[editingStepIndex] = {
+        stepText: trimmedText,
+        description: editingStepDesc.trim() || undefined
+      };
+      setSteps(newSteps);
+      handleEditStepCancel();
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -286,22 +315,71 @@ export function EditScenarioPage() {
             <p className="text-xs text-gray-400">لم يتم إضافة خطوات بعد.</p>
           ) : (
             <ol className="list-decimal list-inside space-y-2">
-              {steps.map((step, index) => (
-                <li key={index} className="flex justify-between items-start bg-gray-50 p-3 rounded-xl border border-slate-200">
-                  <div className="flex-1 ml-3 space-y-1">
-                    <div className="font-semibold text-slate-800 text-sm">{step.stepText}</div>
-                    {step.description && (
-                      <div className="text-xs text-slate-500 bg-white p-2 rounded-lg border border-slate-200/80 inline-flex items-center gap-1.5 mt-1">
-                        <span className="font-semibold text-blue-600">تفاصيل إضافية:</span>
-                        <span className="text-slate-600">{step.description}</span>
+                {steps.map((step, index) => (
+                  <li key={index} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 p-3 rounded-xl border border-slate-200">
+                    {editingStepIndex === index ? (
+                      <div className="flex-1 w-full space-y-3">
+                        <Input
+                          placeholder="تعديل الخطوة..."
+                          value={editingStepText}
+                          onChange={(e) => setEditingStepText(e.target.value)}
+                        />
+                        <Textarea
+                          placeholder="تفاصيل إضافية (اختياري)..."
+                          value={editingStepDesc}
+                          onChange={(e) => setEditingStepDesc(e.target.value)}
+                          rows={2}
+                        />
+                        <div className="flex justify-end gap-2 mt-2">
+                          <button
+                            type="button"
+                            onClick={handleEditStepCancel}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                          >
+                            <X className="w-4 h-4" /> إلغاء
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleEditStepSave}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-blue-700"
+                          >
+                            <Check className="w-4 h-4" /> حفظ
+                          </button>
+                        </div>
                       </div>
+                    ) : (
+                      <>
+                        <div className="flex-1 ml-3 space-y-1">
+                          <div className="font-semibold text-slate-800 text-sm">{step.stepText}</div>
+                          {step.description && (
+                            <div className="text-xs text-slate-500 bg-white p-2 rounded-lg border border-slate-200/80 inline-flex items-center gap-1.5 mt-1">
+                              <span className="font-semibold text-blue-600">تفاصيل إضافية:</span>
+                              <span className="text-slate-600">{step.description}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                          <button 
+                            type="button" 
+                            onClick={() => handleEditStepStart(index)} 
+                            className="text-blue-500 hover:text-blue-700 p-1 cursor-pointer"
+                            title="تعديل"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveStep(index)} 
+                            className="text-red-500 hover:text-red-700 p-1 cursor-pointer"
+                            title="حذف"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </>
                     )}
-                  </div>
-                  <button type="button" onClick={() => handleRemoveStep(index)} className="text-red-500 hover:text-red-700 mt-1 cursor-pointer">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </li>
-              ))}
+                  </li>
+                ))}
             </ol>
           )}
         </div>
