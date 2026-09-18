@@ -19,10 +19,12 @@ namespace AIEmployeeSupport.API.Controllers.Admin;
 public class KnowledgeController : ControllerBase
 {
     private readonly IKnowledgeService _knowledgeService;
+    private readonly IRAGService _ragService;
 
-    public KnowledgeController(IKnowledgeService knowledgeService)
+    public KnowledgeController(IKnowledgeService knowledgeService, IRAGService ragService)
     {
         _knowledgeService = knowledgeService;
+        _ragService = ragService;
     }
 
     private Guid GetUserId()
@@ -96,5 +98,12 @@ public class KnowledgeController : ControllerBase
     {
         var stats = await _knowledgeService.GetEmbeddingStatsAsync(cancellationToken);
         return Ok(stats);
+    }
+
+    [HttpGet("rag-health")]
+    public async Task<IActionResult> GetRagHealth(CancellationToken cancellationToken)
+    {
+        var result = await _ragService.CheckRAGHealthAsync(cancellationToken);
+        return result.IsHealthy ? Ok(result) : StatusCode(500, result);
     }
 }

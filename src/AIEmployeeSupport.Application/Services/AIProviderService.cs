@@ -151,20 +151,24 @@ public class AIProviderService : IAIProviderService
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
-            var activeModel = provider.Models?.FirstOrDefault(m => m.IsActive)?.ModelName;
-            var fallbackModel = provider.Models?.FirstOrDefault()?.ModelName;
-            var modelToUse = !string.IsNullOrWhiteSpace(activeModel)
-                ? activeModel
-                : (!string.IsNullOrWhiteSpace(fallbackModel) ? fallbackModel : "gpt-4o-mini");
+            var targetModel = provider.Models?.FirstOrDefault(m => m.IsActive) ?? provider.Models?.FirstOrDefault();
+            var modelToUse = targetModel?.ModelName ?? "gpt-4o-mini";
+            var isEmbedding = targetModel?.IsEmbeddingModel ?? false;
 
-            // Attempt a basic request to test provider connection
-            var response = await client.GenerateAnswerAsync(new AIRequest 
-            { 
-                QuestionText = "Test connection",
-                ModelName = modelToUse,
-                MaxTokens = 256,
-                Temperature = 0.5
-            }, cancellationToken);
+            if (isEmbedding)
+            {
+                await client.GenerateEmbeddingAsync("Test connection", modelToUse, cancellationToken);
+            }
+            else
+            {
+                await client.GenerateAnswerAsync(new AIRequest 
+                { 
+                    QuestionText = "Test connection",
+                    ModelName = modelToUse,
+                    MaxTokens = 256,
+                    Temperature = 0.5
+                }, cancellationToken);
+            }
             
             return new ProviderTestResult 
             { 

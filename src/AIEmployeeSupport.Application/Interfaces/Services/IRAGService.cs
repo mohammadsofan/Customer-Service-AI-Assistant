@@ -13,4 +13,5 @@ namespace AIEmployeeSupport.Application.Interfaces.Services;
 public interface IRAGService
 {
     Task<QuestionResponse> ProcessQuestionAsync(string questionText, Guid employeeId, CancellationToken cancellationToken = default);
+    Task<AIEmployeeSupport.Application.DTOs.Knowledge.RAGHealthCheckResult> CheckRAGHealthAsync(CancellationToken cancellationToken = default);
 }

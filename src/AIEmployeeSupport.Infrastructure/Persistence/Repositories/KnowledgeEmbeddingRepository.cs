@@ -80,10 +80,26 @@ public class KnowledgeEmbeddingRepository : IKnowledgeEmbeddingRepository
         var queryVector = DeserializeVector(vector);
         var scored = new List<(Guid EmbeddingId, Guid ScenarioId, double Similarity)>(candidates.Count);
 
+        var queryWords = string.IsNullOrWhiteSpace(queryText) 
+            ? new HashSet<string>() 
+            : new HashSet<string>(queryText.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(w => w.ToLowerInvariant()));
+
         foreach (var candidate in candidates)
         {
             var candidateVector = DeserializeVector(candidate.Embedding);
             var similarity = CosineSimilarity(queryVector, candidateVector);
+
+            // Compute lexical score if queryText is present
+            double lexicalScore = 0;
+            if (queryWords.Count > 0 && candidate.ScenarioKeywords.Count > 0)
+            {
+                var keywords = candidate.ScenarioKeywords.Select(k => k.ToLowerInvariant()).ToList();
+                int matchCount = queryWords.Count(qw => keywords.Any(kw => kw.Contains(qw) || qw.Contains(kw)));
+                lexicalScore = (double)matchCount / Math.Max(queryWords.Count, 1) * 0.15; // Max 15% boost
+                similarity += lexicalScore;
+            }
+
+            Console.WriteLine($"[RAG DIAGNOSTICS] Scenario: {candidate.ScenarioId} | Cosine: {similarity - lexicalScore:F4} | Lexical: {lexicalScore:F4} | Final: {similarity:F4} | Threshold: {threshold:F4}");
 
             // Primary semantic path: candidate meets or exceeds threshold
             if (similarity >= threshold)

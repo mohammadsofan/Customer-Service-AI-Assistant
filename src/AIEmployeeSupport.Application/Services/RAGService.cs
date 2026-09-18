@@ -17,6 +17,7 @@ public class RAGService : IRAGService
     private readonly ISupportQuestionRepository _questionRepository;
     private readonly IAIRequestLogRepository _requestLogRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAIModelRepository _modelRepository;
 
     public RAGService(
         IEmbeddingService embeddingService,
@@ -26,6 +27,7 @@ public class RAGService : IRAGService
         IAIConfigurationRepository configRepository,
         ISupportQuestionRepository questionRepository,
         IAIRequestLogRepository requestLogRepository,
+        IAIModelRepository modelRepository,
         IUnitOfWork unitOfWork)
     {
         _embeddingService = embeddingService;
@@ -35,7 +37,83 @@ public class RAGService : IRAGService
         _configRepository = configRepository;
         _questionRepository = questionRepository;
         _requestLogRepository = requestLogRepository;
+        _modelRepository = modelRepository;
         _unitOfWork = unitOfWork;
+    }
+
+    public async Task<AIEmployeeSupport.Application.DTOs.Knowledge.RAGHealthCheckResult> CheckRAGHealthAsync(CancellationToken cancellationToken = default)
+    {
+        var result = new AIEmployeeSupport.Application.DTOs.Knowledge.RAGHealthCheckResult { IsHealthy = true };
+        
+        try
+        {
+            var config = await _configRepository.GetAsync(cancellationToken);
+            if (config == null || config.ActiveEmbeddingModelId == null)
+            {
+                return new AIEmployeeSupport.Application.DTOs.Knowledge.RAGHealthCheckResult { IsHealthy = false, Message = "No active embedding model configured." };
+            }
+
+            var activeModel = await _modelRepository.GetByIdAsync(config.ActiveEmbeddingModelId.Value, cancellationToken);
+            if (activeModel == null)
+            {
+                return new AIEmployeeSupport.Application.DTOs.Knowledge.RAGHealthCheckResult { IsHealthy = false, Message = "Configured embedding model not found." };
+            }
+
+            result.ActiveEmbeddingModel = activeModel.ModelName;
+
+            var stats = await _embeddingRepository.GetStatsAsync(cancellationToken);
+            result.StoredEmbeddingsCount = stats.ReadyEmbeddings;
+
+            if (stats.ReadyEmbeddings == 0)
+            {
+                result.IsHealthy = false;
+                result.Message = "No valid embeddings available in the database.";
+                return result;
+            }
+
+            float[] testEmbedding;
+            try 
+            {
+                testEmbedding = await _embeddingService.GenerateEmbeddingAsync("Test", cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                result.IsHealthy = false;
+                result.Message = $"Embedding generation failed: {ex.Message}";
+                return result;
+            }
+            
+            result.QueryDimension = testEmbedding.Length;
+
+            var vectorBytes = testEmbedding.SelectMany(BitConverter.GetBytes).ToArray();
+            // threshold = 0.0 to guarantee returning a candidate if any exist
+            var searchResults = await _embeddingRepository.SearchSimilarAsync(vectorBytes, 1, 0.0, "Test", cancellationToken);
+            
+            if (!searchResults.Any())
+            {
+                result.IsHealthy = false;
+                result.Message = "Retrieval returned zero candidates unexpectedly (possible dimension mismatch or vector space error).";
+            }
+            else 
+            {
+                var storedVectorBytes = searchResults.First().Embedding.Embedding;
+                result.StoredDimension = storedVectorBytes.Length / sizeof(float);
+
+                if (result.QueryDimension != result.StoredDimension)
+                {
+                    result.IsHealthy = false;
+                    result.Message = $"Dimension mismatch: Query={result.QueryDimension}, Stored={result.StoredDimension}";
+                }
+            }
+
+        }
+        catch (Exception ex)
+        {
+            result.IsHealthy = false;
+            result.Message = $"Health check crashed: {ex.Message}";
+        }
+
+        return result;
     }
 
     public async Task<QuestionResponse> ProcessQuestionAsync(string questionText, Guid employeeId, CancellationToken cancellationToken = default)
@@ -58,11 +136,22 @@ public class RAGService : IRAGService
         if (config == null) throw new InvalidOperationException("AI configuration not found.");
 
         var embeddingSw = Stopwatch.StartNew();
+        Console.WriteLine($"\n=======================================================");
+        Console.WriteLine($"[RAG DIAGNOSTICS] Query: '{questionText}'");
+        Console.WriteLine($"[RAG DIAGNOSTICS] Active Model ID: {config.ActiveEmbeddingModelId}");
+
         var questionVector = await _embeddingService.GenerateEmbeddingAsync(questionText, cancellationToken);
         var questionVectorBytes = questionVector.SelectMany(BitConverter.GetBytes).ToArray();
+        
+        Console.WriteLine($"[RAG DIAGNOSTICS] Generated embedding with dimension: {questionVector.Length}");
+        
         var similarDocs = (await _embeddingRepository.SearchSimilarAsync(questionVectorBytes, config.TopK, config.SimilarityThreshold, questionText, cancellationToken)).ToList();
-
-        if (!similarDocs.Any())
+        
+        if (similarDocs.Any()) 
+        {
+            Console.WriteLine($"[RAG DIAGNOSTICS] Selected Top Match: {similarDocs.First().Embedding.ScenarioId}");
+        }
+        else
         {
             // Single-pass LLM Query Rewriting fallback for colloquial / indirect questions
             var rewrittenQuery = await _failoverService.RewriteQueryWithFailoverAsync(questionText, cancellationToken);
