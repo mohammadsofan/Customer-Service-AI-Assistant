@@ -36,6 +36,9 @@ public class AIConfigurationRepository : IAIConfigurationRepository
             existing.TopK = configuration.TopK;
             existing.SystemPrompt = configuration.SystemPrompt;
             existing.EnableAutoFailover = configuration.EnableAutoFailover;
+            existing.LLMRerankingEnabled = configuration.LLMRerankingEnabled;
+            existing.LLMRerankingTopK = configuration.LLMRerankingTopK;
+            existing.LLMRerankingConfidenceThreshold = configuration.LLMRerankingConfidenceThreshold;
             existing.UpdatedBy = configuration.UpdatedBy;
             existing.UpdatedAt = configuration.UpdatedAt;
         }

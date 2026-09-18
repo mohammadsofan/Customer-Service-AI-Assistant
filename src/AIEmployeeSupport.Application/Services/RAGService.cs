@@ -170,24 +170,104 @@ public class RAGService : IRAGService
         }
 
         var topResult = similarDocs.First();
+        question.MathTopScenarioId = topResult.Embedding.ScenarioId;
+
+        // Stage 2: Semantic Reranking
+        if (config.LLMRerankingEnabled && similarDocs.Count > 1)
+        {
+            question.RerankingUsed = true;
+            var rerankCandidates = similarDocs.Take(config.LLMRerankingTopK > 0 ? config.LLMRerankingTopK : 3).ToList();
+            
+            var candidatePrompts = new List<string>();
+            foreach (var doc in rerankCandidates)
+            {
+                var scenario = await _scenarioRepository.GetByIdAsync(doc.Embedding.ScenarioId, cancellationToken);
+                if (scenario != null)
+                {
+                    var keywords = scenario.ScenarioKeywords != null && scenario.ScenarioKeywords.Any()
+                        ? string.Join(", ", scenario.ScenarioKeywords.Select(sk => sk.Keyword?.Name).Where(k => !string.IsNullOrWhiteSpace(k)))
+                        : string.Empty;
+                    candidatePrompts.Add($"[CANDIDATE]\nID: {scenario.Id}\nName: {scenario.Name}\nDescription: {scenario.Description}\nKeywords: {keywords}\n[/CANDIDATE]");
+                }
+            }
+
+            var rerankerPrompt = config.SystemPrompt + "\n\n" +
+                "You are a scenario selection engine. Given the user's question and a list of candidate scenarios, select the single scenario that best matches the user's actual intent.\n" +
+                "You may only select one of the provided candidate ScenarioIds.\n" +
+                "If none of the candidates match the user's intent, output null for the selectedScenarioId.\n" +
+                "Return ONLY strict JSON matching this structure: { \"selectedScenarioId\": \"123...\" } or { \"selectedScenarioId\": null }.";
+
+            var rerankRequest = new AIRequest
+            {
+                QuestionText = $"<USER_INPUT>\n{questionText}\n</USER_INPUT>",
+                RetrievedKnowledge = candidatePrompts,
+                SystemPrompt = rerankerPrompt,
+                Temperature = 0.0, // Low temp for structured choice
+                MaxTokens = 150,
+                ModelName = config.ActiveModel?.ModelName ?? "default"
+            };
+
+            try 
+            {
+                var rerankResponse = await _failoverService.GenerateAnswerWithFailoverAsync(rerankRequest, cancellationToken);
+                var rerankJson = rerankResponse.Summary ?? rerankResponse.Reason;
+                // Parse the JSON
+                if (rerankJson != null)
+                {
+                    rerankJson = rerankJson.Trim();
+                    if (rerankJson.StartsWith("```json")) rerankJson = rerankJson.Substring(7);
+                    if (rerankJson.StartsWith("```")) rerankJson = rerankJson.Substring(3);
+                    if (rerankJson.EndsWith("```")) rerankJson = rerankJson.Substring(0, rerankJson.Length - 3);
+                    rerankJson = rerankJson.Trim();
+
+                    var parsedResult = System.Text.Json.JsonSerializer.Deserialize<AIEmployeeSupport.Application.DTOs.Knowledge.RerankResultDto>(rerankJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    
+                    if (parsedResult != null)
+                    {
+                        if (parsedResult.selectedScenarioId == null)
+                        {
+                            question.RerankingNoMatch = true;
+                            return await EscalateQuestion(question, null, stopwatch.ElapsedMilliseconds, cancellationToken);
+                        }
+
+                        question.RerankedScenarioId = parsedResult.selectedScenarioId;
+                        
+                        var matchedCandidate = similarDocs.FirstOrDefault(d => d.Embedding.ScenarioId == parsedResult.selectedScenarioId);
+                        if (matchedCandidate != default)
+                        {
+                            topResult = matchedCandidate;
+                        }
+                        else
+                        {
+                            // ID not in candidates
+                            question.RerankingFailed = true;
+                        }
+                    }
+                    else
+                    {
+                        question.RerankingFailed = true;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                question.RerankingFailed = true;
+                // Graceful fallback to math topResult
+            }
+        }
+
         var topScenario = await _scenarioRepository.GetByIdAsync(topResult.Embedding.ScenarioId, cancellationToken);
         
         var retrievedKnowledge = new List<string>();
-        foreach (var doc in similarDocs)
+        // Only provide the TOP selected scenario to the final LLM (to strictly ground it)
+        if (topScenario != null)
         {
-            var scenario = await _scenarioRepository.GetByIdAsync(doc.Embedding.ScenarioId, cancellationToken);
-            if (scenario != null)
-            {
-                var steps = string.Join("\n", scenario.ResolutionSteps.OrderBy(s => s.StepOrder).Select(s => string.IsNullOrWhiteSpace(s.Description) ? $"{s.StepOrder}. {s.StepText}" : $"{s.StepOrder}. {s.StepText} (تفاصيل: {s.Description})"));
-                var categorySection = scenario.Category != null && !string.IsNullOrWhiteSpace(scenario.Category.Name)
-                    ? $"Category: {scenario.Category.Name}\n"
-                    : string.Empty;
-                var keywords = scenario.ScenarioKeywords != null && scenario.ScenarioKeywords.Any()
-                    ? string.Join(", ", scenario.ScenarioKeywords.Select(sk => sk.Keyword?.Name).Where(k => !string.IsNullOrWhiteSpace(k)))
-                    : string.Empty;
-                var keywordsSection = string.IsNullOrWhiteSpace(keywords) ? "" : $"Keywords: {keywords}\n";
-                retrievedKnowledge.Add($"[SCENARIO: {scenario.Name}]\n{categorySection}{keywordsSection}{scenario.Description}\nSteps:\n{steps}\n[/SCENARIO]");
-            }
+            var steps = string.Join("\n", topScenario.ResolutionSteps.OrderBy(s => s.StepOrder).Select(s => string.IsNullOrWhiteSpace(s.Description) ? $"{s.StepOrder}. {s.StepText}" : $"{s.StepOrder}. {s.StepText} (تفاصيل: {s.Description})"));
+            var categorySection = topScenario.Category != null && !string.IsNullOrWhiteSpace(topScenario.Category.Name)
+                ? $"Category: {topScenario.Category.Name}\n"
+                : string.Empty;
+            
+            retrievedKnowledge.Add($"[SCENARIO: {topScenario.Name}]\n{categorySection}{topScenario.Description}\nSteps:\n{steps}\n[/SCENARIO]");
         }
 
         // Anti-prompt injection: Wrap user query in strict XML tags and enforce grounding

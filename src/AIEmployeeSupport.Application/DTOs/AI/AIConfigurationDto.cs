@@ -16,4 +16,7 @@ public class AIConfigurationDto
     public int TopK { get; set; }
     public string SystemPrompt { get; set; } = string.Empty;
     public bool EnableAutoFailover { get; set; }
+    public bool LLMRerankingEnabled { get; set; }
+    public int LLMRerankingTopK { get; set; }
+    public double LLMRerankingConfidenceThreshold { get; set; }
 }

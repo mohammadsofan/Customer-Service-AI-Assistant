@@ -13,6 +13,12 @@ public class AIConfiguration
     public int TopK { get; set; }
     public string SystemPrompt { get; set; } = string.Empty;
     public bool EnableAutoFailover { get; set; }
+    
+    // Reranking Configuration
+    public bool LLMRerankingEnabled { get; set; } = true;
+    public int LLMRerankingTopK { get; set; } = 3;
+    public double LLMRerankingConfidenceThreshold { get; set; } = 0.5;
+
     public Guid UpdatedBy { get; set; }
     public DateTime UpdatedAt { get; set; }
 

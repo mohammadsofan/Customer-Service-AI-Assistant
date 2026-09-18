@@ -40,7 +40,10 @@ public class AIConfigurationService : IAIConfigurationService
             SimilarityThreshold = config.SimilarityThreshold,
             TopK = config.TopK,
             SystemPrompt = config.SystemPrompt,
-            EnableAutoFailover = config.EnableAutoFailover
+            EnableAutoFailover = config.EnableAutoFailover,
+            LLMRerankingEnabled = config.LLMRerankingEnabled,
+            LLMRerankingTopK = config.LLMRerankingTopK,
+            LLMRerankingConfidenceThreshold = config.LLMRerankingConfidenceThreshold
         };
     }
 
@@ -62,6 +65,9 @@ public class AIConfigurationService : IAIConfigurationService
         config.TopK = request.TopK;
         config.SystemPrompt = request.SystemPrompt;
         config.EnableAutoFailover = request.EnableAutoFailover;
+        config.LLMRerankingEnabled = request.LLMRerankingEnabled;
+        config.LLMRerankingTopK = request.LLMRerankingTopK;
+        config.LLMRerankingConfidenceThreshold = request.LLMRerankingConfidenceThreshold;
         config.UpdatedBy = userId;
         config.UpdatedAt = DateTime.UtcNow;
 

@@ -12,4 +12,7 @@ public class UpdateAIConfigurationRequest
     public int TopK { get; set; }
     public string SystemPrompt { get; set; } = string.Empty;
     public bool EnableAutoFailover { get; set; }
+    public bool LLMRerankingEnabled { get; set; } = true;
+    public int LLMRerankingTopK { get; set; } = 3;
+    public double LLMRerankingConfidenceThreshold { get; set; } = 0.5;
 }

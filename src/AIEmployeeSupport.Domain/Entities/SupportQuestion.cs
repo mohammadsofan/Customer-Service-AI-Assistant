@@ -13,6 +13,14 @@ public class SupportQuestion
     public bool Escalated { get; set; }
     public double? ConfidenceScore { get; set; }
     public Guid? ScenarioId { get; set; }
+    
+    // Reranking Audit Fields
+    public Guid? MathTopScenarioId { get; set; }
+    public Guid? RerankedScenarioId { get; set; }
+    public bool RerankingUsed { get; set; }
+    public bool RerankingFailed { get; set; }
+    public bool RerankingNoMatch { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
     public long? ProcessingTimeMs { get; set; }

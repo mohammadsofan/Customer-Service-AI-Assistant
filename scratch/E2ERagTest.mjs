@@ -71,15 +71,12 @@ async function runTests() {
         await askQuestion(token, 'كيف بقدر ارجع الباسوورد تبعي؟');
         
         // Keyword-only query (Should test Lexical Scoring!)
-        await askQuestion(token, 'استعادة كلمة المرور حساب');
-        
-        // Problematic query from audit
-        await askQuestion(token, 'المشترك يواجه مشكلة في الانترنت اثناء التجوال او حزمة التجوال لا تعمل');
-
-        // Short query
-        await askQuestion(token, 'واي فاي ضعيف');
-
-        // Unrelated question
+        const testCases = [
+        "المشترك بده يعرف قديش فاتورته عالجوال",
+        "المشترك يواجه مشكلة في الانترنت اثناء التجوال او حزمة التجوال لا تعمل",
+        "عندي مشكلة بالانترنت", // Broad
+        "انا غضبان جدا اريد الغاء اشتراكي فورا بدون اي نقاش" // No match semantic expected
+    ];// Unrelated question
         await askQuestion(token, 'ما هي عاصمة اليابان؟');
 
         // Prompt injection attempt
