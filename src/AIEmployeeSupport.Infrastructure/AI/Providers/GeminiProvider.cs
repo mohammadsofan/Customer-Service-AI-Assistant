@@ -13,7 +13,10 @@ public class GeminiProvider : BaseAIProvider
 
     public override async Task<AIResponse> GenerateAnswerAsync(AIRequest request, CancellationToken cancellationToken = default)
     {
-        var systemPrompt = $@"{request.SystemPrompt}
+        string systemPrompt;
+        if (request.ExpectsStandardEnvelope)
+        {
+            systemPrompt = $@"{request.SystemPrompt}
         
 You must always respond in JSON format matching exactly this schema:
 {{
@@ -25,33 +28,70 @@ You must always respond in JSON format matching exactly this schema:
 
 Retrieved Knowledge:
 {string.Join("\n---\n", request.RetrievedKnowledge)}";
+        }
+        else
+        {
+            systemPrompt = $@"{request.SystemPrompt}
+
+Retrieved Knowledge:
+{string.Join("\n---\n", request.RetrievedKnowledge)}";
+        }
 
         var payload = new
         {
-            system_instruction = new { parts = new[] { new { text = systemPrompt } } },
             contents = new[]
             {
                 new { role = "user", parts = new[] { new { text = request.QuestionText } } }
             },
+            systemInstruction = new
+            {
+                parts = new[] { new { text = systemPrompt } }
+            },
             generationConfig = new
             {
                 temperature = request.Temperature,
-                maxOutputTokens = request.MaxTokens,
+                maxOutputTokens = request.MaxTokens > 0 ? request.MaxTokens : 256,
                 responseMimeType = "application/json"
             }
         };
 
-        var url = $"./{request.ModelName}:generateContent?key={ApiKey}";
-        var response = await HttpClient.PostAsJsonAsync(url, payload, cancellationToken);
+        var response = await HttpClient.PostAsJsonAsync($"models/{request.ModelName}:generateContent?key={ApiKey}", payload, cancellationToken);
         var rawContent = await response.Content.ReadAsStringAsync(cancellationToken);
 
         HandleHttpError(response, rawContent);
 
         using var doc = JsonDocument.Parse(rawContent);
-        var contentStr = doc.RootElement.GetProperty("candidates")[0].GetProperty("content").GetProperty("parts")[0].GetProperty("text").GetString();
-        
-        var aiResponse = JsonSerializer.Deserialize<AIResponse>(contentStr ?? "{}", new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-            ?? new AIResponse();
+        var contentStr = doc.RootElement
+            .GetProperty("candidates")[0]
+            .GetProperty("content")
+            .GetProperty("parts")[0]
+            .GetProperty("text")
+            .GetString()?.Trim() ?? "{}";
+
+        if (contentStr.StartsWith("```"))
+        {
+            var firstLineEnd = contentStr.IndexOf('\n');
+            if (firstLineEnd != -1)
+            {
+                contentStr = contentStr.Substring(firstLineEnd + 1);
+            }
+            if (contentStr.EndsWith("```"))
+            {
+                contentStr = contentStr.Substring(0, contentStr.Length - 3);
+            }
+            contentStr = contentStr.Trim();
+        }
+
+        AIResponse aiResponse;
+        if (request.ExpectsStandardEnvelope)
+        {
+            aiResponse = JsonSerializer.Deserialize<AIResponse>(contentStr, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                ?? new AIResponse();
+        }
+        else
+        {
+            aiResponse = new AIResponse { Answered = true, Summary = contentStr };
+        }
             
         aiResponse.RawResponse = rawContent;
         return aiResponse;

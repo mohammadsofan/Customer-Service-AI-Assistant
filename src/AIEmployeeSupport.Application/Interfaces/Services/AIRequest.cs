@@ -8,4 +8,5 @@ public class AIRequest
     public double Temperature { get; set; }
     public int MaxTokens { get; set; }
     public string ModelName { get; set; } = string.Empty;
+    public bool ExpectsStandardEnvelope { get; set; } = true;
 }

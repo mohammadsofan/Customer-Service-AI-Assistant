@@ -74,4 +74,28 @@ public class SupportController : ControllerBase
         var scenarios = await _supportService.GetTopScenariosAsync(count, cancellationToken);
         return Ok(scenarios);
     }
+
+    [HttpGet("audit")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> GetAuditLogs([FromServices] AIEmployeeSupport.Infrastructure.Persistence.ApplicationDbContext context, [FromQuery] int count = 10, CancellationToken cancellationToken = default)
+    {
+        var logs = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            System.Linq.Queryable.Take(
+                System.Linq.Queryable.OrderByDescending(
+                    context.SupportQuestions, q => q.CreatedAt
+                ), count
+            ), cancellationToken
+        );
+        return Ok(logs.Select(q => new {
+            q.QuestionText,
+            q.Status,
+            q.ScenarioId,
+            q.MathTopScenarioId,
+            q.RerankedScenarioId,
+            q.RerankingUsed,
+            q.RerankingFailed,
+            q.RerankingNoMatch,
+            q.CreatedAt
+        }));
+    }
 }

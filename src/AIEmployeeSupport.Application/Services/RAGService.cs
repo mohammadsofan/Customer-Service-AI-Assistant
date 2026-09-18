@@ -145,7 +145,13 @@ public class RAGService : IRAGService
         
         Console.WriteLine($"[RAG DIAGNOSTICS] Generated embedding with dimension: {questionVector.Length}");
         
-        var similarDocs = (await _embeddingRepository.SearchSimilarAsync(questionVectorBytes, config.TopK, config.SimilarityThreshold, questionText, cancellationToken)).ToList();
+        int searchTopK = config.TopK;
+        if (config.LLMRerankingEnabled && config.LLMRerankingTopK > config.TopK)
+        {
+            searchTopK = config.LLMRerankingTopK;
+        }
+
+        var similarDocs = (await _embeddingRepository.SearchSimilarAsync(questionVectorBytes, searchTopK, config.SimilarityThreshold, questionText, cancellationToken)).ToList();
         
         if (similarDocs.Any()) 
         {
@@ -159,7 +165,7 @@ public class RAGService : IRAGService
             {
                 var rewrittenVector = await _embeddingService.GenerateEmbeddingAsync(rewrittenQuery, cancellationToken);
                 var rewrittenVectorBytes = rewrittenVector.SelectMany(BitConverter.GetBytes).ToArray();
-                similarDocs = (await _embeddingRepository.SearchSimilarAsync(rewrittenVectorBytes, config.TopK, config.SimilarityThreshold, rewrittenQuery, cancellationToken)).ToList();
+                similarDocs = (await _embeddingRepository.SearchSimilarAsync(rewrittenVectorBytes, searchTopK, config.SimilarityThreshold, rewrittenQuery, cancellationToken)).ToList();
             }
         }
         embeddingSw.Stop();
@@ -204,7 +210,8 @@ public class RAGService : IRAGService
                 SystemPrompt = rerankerPrompt,
                 Temperature = 0.0, // Low temp for structured choice
                 MaxTokens = 150,
-                ModelName = config.ActiveModel?.ModelName ?? "default"
+                ModelName = config.ActiveModel?.ModelName ?? "default",
+                ExpectsStandardEnvelope = false
             };
 
             try 

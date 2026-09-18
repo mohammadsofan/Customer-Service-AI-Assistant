@@ -19,7 +19,11 @@ public class OpenAIProvider : BaseAIProvider
 
     public override async Task<AIResponse> GenerateAnswerAsync(AIRequest request, CancellationToken cancellationToken = default)
     {
-        var systemPrompt = $@"{request.SystemPrompt}
+        string systemPrompt;
+        
+        if (request.ExpectsStandardEnvelope)
+        {
+            systemPrompt = $@"{request.SystemPrompt}
         
 You must always respond in JSON format matching exactly this schema:
 {{
@@ -31,6 +35,14 @@ You must always respond in JSON format matching exactly this schema:
 
 Retrieved Knowledge:
 {string.Join("\n---\n", request.RetrievedKnowledge)}";
+        }
+        else
+        {
+            systemPrompt = $@"{request.SystemPrompt}
+
+Retrieved Knowledge:
+{string.Join("\n---\n", request.RetrievedKnowledge)}";
+        }
 
         var payload = new
         {
@@ -67,8 +79,16 @@ Retrieved Knowledge:
             contentStr = contentStr.Trim();
         }
 
-        var aiResponse = JsonSerializer.Deserialize<AIResponse>(contentStr, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-            ?? new AIResponse();
+        AIResponse aiResponse;
+        if (request.ExpectsStandardEnvelope)
+        {
+            aiResponse = JsonSerializer.Deserialize<AIResponse>(contentStr, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                ?? new AIResponse();
+        }
+        else
+        {
+            aiResponse = new AIResponse { Answered = true, Summary = contentStr };
+        }
             
         aiResponse.RawResponse = rawContent;
         return aiResponse;

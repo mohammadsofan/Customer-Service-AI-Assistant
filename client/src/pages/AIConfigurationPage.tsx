@@ -25,6 +25,9 @@ export function AIConfigurationPage() {
   const [maxTokens, setMaxTokens] = useState('2000');
   const [similarityThreshold, setSimilarityThreshold] = useState('0.85');
   const [topK, setTopK] = useState('3');
+  const [llmRerankingEnabled, setLlmRerankingEnabled] = useState(false);
+  const [llmRerankingTopK, setLlmRerankingTopK] = useState('10');
+  const [llmRerankingConfidenceThreshold, setLlmRerankingConfidenceThreshold] = useState('0.6');
   const [systemPrompt, setSystemPrompt] = useState('أنت مساعد ذكي لخدمة العملاء...');
   const [autoFailover, setAutoFailover] = useState(true);
 
@@ -53,6 +56,9 @@ export function AIConfigurationPage() {
         setMaxTokens(configuration.maxTokens?.toString() || '2000');
         setSimilarityThreshold(configuration.similarityThreshold?.toString() || '0.85');
         setTopK(configuration.topK?.toString() || '3');
+        setLlmRerankingEnabled(configuration.llmRerankingEnabled ?? false);
+        setLlmRerankingTopK(configuration.llmRerankingTopK?.toString() || '10');
+        setLlmRerankingConfidenceThreshold(configuration.llmRerankingConfidenceThreshold?.toString() || '0.6');
         setSystemPrompt(configuration.systemPrompt || '');
         setAutoFailover(configuration.enableAutoFailover ?? true);
         
@@ -115,8 +121,10 @@ export function AIConfigurationPage() {
     
     try {
       setIsSaving(true);
-      await aiService.saveConfiguration({
-        activeProviderId: activeProvId,
+      await aiService.updateConfiguration({
+        providerId: config.providerId,
+        activeProviderId: config.activeProviderId,
+        modelId: config.modelId,
         activeModelId: activeModId,
         activeEmbeddingProviderId: config.activeEmbeddingProviderId,
         activeEmbeddingModelId: config.activeEmbeddingModelId,
@@ -124,6 +132,9 @@ export function AIConfigurationPage() {
         maxTokens: parseInt(maxTokens) || 1024,
         similarityThreshold: parseFloat(similarityThreshold) || 0.75,
         topK: parseInt(topK) || 5,
+        llmRerankingEnabled,
+        llmRerankingTopK: parseInt(llmRerankingTopK) || 10,
+        llmRerankingConfidenceThreshold: parseFloat(llmRerankingConfidenceThreshold) || 0.6,
         systemPrompt,
         enableAutoFailover: autoFailover
       });
@@ -261,13 +272,50 @@ export function AIConfigurationPage() {
             value={similarityThreshold}
             onChange={(e) => setSimilarityThreshold(e.target.value)}
           />
-          <Input
-            label="أفضل النتائج (Top K)"
-            type="number"
-            value={topK}
-            onChange={(e) => setTopK(e.target.value)}
-          />
-        </div>
+            <Input
+              label="أفضل النتائج للبحث الرياضي (Retrieval Top K)"
+              type="number"
+              value={topK}
+              onChange={(e) => setTopK(e.target.value)}
+            />
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <h3 className="text-lg font-medium mb-4">إعدادات إعادة الترتيب الذكي (LLM Reranking)</h3>
+            
+            <div className="flex items-center gap-3 mb-4">
+              <input
+                type="checkbox"
+                id="llmRerankingEnabled"
+                checked={llmRerankingEnabled}
+                onChange={(e) => setLlmRerankingEnabled(e.target.checked)}
+                className="w-4 h-4 text-primary"
+              />
+              <label htmlFor="llmRerankingEnabled" className="font-medium">
+                تفعيل إعادة الترتيب بالذكاء الاصطناعي (Two-Stage RAG)
+              </label>
+            </div>
+
+            {llmRerankingEnabled && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="عدد السيناريوهات للمرشحين (LLM Reranking Top K)"
+                  type="number"
+                  value={llmRerankingTopK}
+                  onChange={(e) => setLlmRerankingTopK(e.target.value)}
+                />
+                <Input
+                  label="عتبة الثقة (Confidence Threshold)"
+                  type="number"
+                  step="0.05"
+                  min="0"
+                  max="1"
+                  value={llmRerankingConfidenceThreshold}
+                  onChange={(e) => setLlmRerankingConfidenceThreshold(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
 
         <div>
           <Textarea

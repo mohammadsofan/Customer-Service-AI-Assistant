@@ -36,6 +36,9 @@ export interface AiConfiguration {
     maxTokens?: number;
     similarityThreshold?: number;
     topK?: number;
+    llmRerankingEnabled?: boolean;
+    llmRerankingTopK?: number;
+    llmRerankingConfidenceThreshold?: number;
     systemPrompt?: string;
 }
 
