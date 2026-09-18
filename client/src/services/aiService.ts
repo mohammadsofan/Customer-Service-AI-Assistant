@@ -18,6 +18,7 @@ export interface AiModel {
     modelName?: string;
     providerId: string;
     isActive?: boolean;
+    isEmbeddingModel?: boolean;
 }
 
 export interface AiConfiguration {
@@ -78,13 +79,13 @@ const aiService = {
         }));
     },
 
-    createModel: async (model: { providerId: string; modelName: string }): Promise<AiModel> => {
+    createModel: async (model: { providerId: string; modelName: string; isEmbeddingModel?: boolean }): Promise<AiModel> => {
         const response = await api.post<AiModel>('/ai/models', model);
         return response.data;
     },
 
-    updateModel: async (id: string, modelName: string): Promise<AiModel> => {
-        const response = await api.put<AiModel>(`/ai/models/${id}`, { modelName });
+    updateModel: async (id: string, modelName: string, isEmbeddingModel?: boolean): Promise<AiModel> => {
+        const response = await api.put<AiModel>(`/ai/models/${id}`, { modelName, isEmbeddingModel });
         return response.data;
     },
 

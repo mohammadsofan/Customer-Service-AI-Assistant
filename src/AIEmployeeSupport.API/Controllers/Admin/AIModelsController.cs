@@ -51,7 +51,7 @@ public class AIModelsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateAIModelRequest request, CancellationToken cancellationToken)
     {
-        var result = await _modelService.UpdateAsync(id, request.ModelName, cancellationToken);
+        var result = await _modelService.UpdateAsync(id, request, cancellationToken);
         return Ok(result);
     }
 

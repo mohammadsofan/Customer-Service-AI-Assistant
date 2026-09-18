@@ -6,6 +6,7 @@ public class AIModel
     public Guid ProviderId { get; set; }
     public string ModelName { get; set; } = string.Empty;
     public bool IsActive { get; set; }
+    public bool IsEmbeddingModel { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

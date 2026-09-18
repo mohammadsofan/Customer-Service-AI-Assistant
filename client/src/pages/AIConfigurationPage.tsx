@@ -62,11 +62,11 @@ export function AIConfigurationPage() {
 
         if (activeProvId) {
           const provModels = await aiService.getModels(activeProvId);
-          setModels(provModels);
+          setModels(provModels.filter(m => !m.isEmbeddingModel));
         }
         if (configuration.activeEmbeddingProviderId) {
           const embModels = await aiService.getModels(configuration.activeEmbeddingProviderId);
-          setEmbeddingModels(embModels);
+          setEmbeddingModels(embModels.filter(m => m.isEmbeddingModel));
         }
       }
     } catch (error) {
@@ -81,7 +81,7 @@ export function AIConfigurationPage() {
     try {
       if (providerId) {
         const provModels = await aiService.getModels(providerId);
-        setModels(provModels);
+        setModels(provModels.filter(m => !m.isEmbeddingModel));
       } else {
         setModels([]);
       }
@@ -179,7 +179,7 @@ export function AIConfigurationPage() {
               if (pId) {
                 try {
                   const embModels = await aiService.getModels(pId);
-                  setEmbeddingModels(embModels);
+                  setEmbeddingModels(embModels.filter(m => m.isEmbeddingModel));
                 } catch {
                   toast.error('خطأ في تحميل نماذج التضمين');
                 }

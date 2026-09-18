@@ -19,6 +19,7 @@ export function AIModelsPage() {
 
   const [name, setName] = useState('');
   const [providerId, setProviderId] = useState('');
+  const [isEmbeddingModel, setIsEmbeddingModel] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -51,10 +52,12 @@ export function AIModelsPage() {
       setCurrentModel(model);
       setName(model.name || model.modelName || '');
       setProviderId(model.providerId);
+      setIsEmbeddingModel(model.isEmbeddingModel || false);
     } else {
       setCurrentModel(null);
       setName('');
       setProviderId(providers[0]?.id || '');
+      setIsEmbeddingModel(false);
     }
     setIsModalOpen(true);
   };
@@ -70,12 +73,13 @@ export function AIModelsPage() {
     try {
       setIsSaving(true);
       if (currentModel) {
-        await aiService.updateModel(currentModel.id, name.trim());
+        await aiService.updateModel(currentModel.id, name.trim(), isEmbeddingModel);
         toast.success('تم تحديث النموذج بنجاح');
       } else {
         await aiService.createModel({
           providerId,
-          modelName: name.trim()
+          modelName: name.trim(),
+          isEmbeddingModel
         });
         toast.success('تمت إضافة النموذج بنجاح');
       }
@@ -108,7 +112,20 @@ export function AIModelsPage() {
     : activeModels;
 
   const columns: Column<AiModel>[] = [
-    { key: 'name', header: 'اسم النموذج' },
+    { 
+      key: 'name', 
+      header: 'اسم النموذج',
+      cell: (item) => (
+        <div className="flex items-center gap-2">
+          <span>{item.name}</span>
+          {item.isEmbeddingModel && (
+            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded border border-blue-400">
+              Embedding
+            </span>
+          )}
+        </div>
+      )
+    },
     { 
       key: 'providerId', 
       header: 'المزود',
@@ -167,6 +184,18 @@ export function AIModelsPage() {
             onChange={(e) => setProviderId(e.target.value)}
             options={providers.map(p => ({ value: p.id, label: p.name }))}
           />
+          <div className="flex items-center gap-2 mt-4">
+            <input
+              type="checkbox"
+              id="isEmbeddingModel"
+              checked={isEmbeddingModel}
+              onChange={(e) => setIsEmbeddingModel(e.target.checked)}
+              className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary focus:ring-2"
+            />
+            <label htmlFor="isEmbeddingModel" className="text-sm font-medium text-gray-900">
+              نموذج تضمين وبحث (Embedding Model)
+            </label>
+          </div>
           <div className="mt-6 flex justify-end gap-3">
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>
               إلغاء

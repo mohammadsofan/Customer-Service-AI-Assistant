@@ -33,7 +33,8 @@ public class AIModelService : IAIModelService
             Id = m.Id,
             ProviderId = m.ProviderId,
             ModelName = m.ModelName,
-            IsActive = m.IsActive
+            IsActive = m.IsActive,
+            IsEmbeddingModel = m.IsEmbeddingModel
         });
     }
 
@@ -45,7 +46,8 @@ public class AIModelService : IAIModelService
             Id = m.Id,
             ProviderId = m.ProviderId,
             ModelName = m.ModelName,
-            IsActive = m.IsActive
+            IsActive = m.IsActive,
+            IsEmbeddingModel = m.IsEmbeddingModel
         });
     }
 
@@ -59,7 +61,8 @@ public class AIModelService : IAIModelService
             Id = model.Id,
             ProviderId = model.ProviderId,
             ModelName = model.ModelName,
-            IsActive = model.IsActive
+            IsActive = model.IsActive,
+            IsEmbeddingModel = model.IsEmbeddingModel
         };
     }
 
@@ -71,6 +74,7 @@ public class AIModelService : IAIModelService
             ProviderId = request.ProviderId,
             ModelName = request.ModelName,
             IsActive = true,
+            IsEmbeddingModel = request.IsEmbeddingModel,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -81,12 +85,13 @@ public class AIModelService : IAIModelService
         return (await GetByIdAsync(model.Id, cancellationToken))!;
     }
 
-    public async Task<AIModelDto> UpdateAsync(Guid id, string modelName, CancellationToken cancellationToken = default)
+    public async Task<AIModelDto> UpdateAsync(Guid id, UpdateAIModelRequest request, CancellationToken cancellationToken = default)
     {
         var model = await _modelRepository.GetByIdAsync(id, cancellationToken);
         if (model == null) throw new NotFoundException(nameof(AIModel), id);
 
-        model.ModelName = modelName;
+        model.ModelName = request.ModelName;
+        model.IsEmbeddingModel = request.IsEmbeddingModel;
         model.UpdatedAt = DateTime.UtcNow;
 
         await _modelRepository.UpdateAsync(model, cancellationToken);

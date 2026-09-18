@@ -7,4 +7,5 @@ public class AIModelDto
     public string ProviderName { get; set; } = string.Empty;
     public string ModelName { get; set; } = string.Empty;
     public bool IsActive { get; set; }
+    public bool IsEmbeddingModel { get; set; }
 }
