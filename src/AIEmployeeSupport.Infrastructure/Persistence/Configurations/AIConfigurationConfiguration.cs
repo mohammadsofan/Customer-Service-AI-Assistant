@@ -47,5 +47,15 @@ public class AIConfigurationConfiguration : IEntityTypeConfiguration<AIConfigura
             .WithMany()
             .HasForeignKey(c => c.ActiveModelId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(c => c.ActiveEmbeddingProvider)
+            .WithMany()
+            .HasForeignKey(c => c.ActiveEmbeddingProviderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(c => c.ActiveEmbeddingModel)
+            .WithMany()
+            .HasForeignKey(c => c.ActiveEmbeddingModelId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

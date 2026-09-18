@@ -9,6 +9,7 @@ import aiService, { type AiProvider, type AiModel, type AiConfiguration } from '
 export function AIConfigurationPage() {
   const [providers, setProviders] = useState<AiProvider[]>([]);
   const [models, setModels] = useState<AiModel[]>([]);
+  const [embeddingModels, setEmbeddingModels] = useState<AiModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
@@ -48,7 +49,9 @@ export function AIConfigurationPage() {
           providerId: activeProvId,
           activeProviderId: activeProvId,
           modelId: activeModId,
-          activeModelId: activeModId
+          activeModelId: activeModId,
+          activeEmbeddingProviderId: configuration.activeEmbeddingProviderId || '',
+          activeEmbeddingModelId: configuration.activeEmbeddingModelId || ''
         });
         if (configuration.temperature !== undefined) setTemperature(configuration.temperature.toString());
         if (configuration.maxTokens !== undefined) setMaxTokens(configuration.maxTokens.toString());
@@ -60,6 +63,10 @@ export function AIConfigurationPage() {
         if (activeProvId) {
           const provModels = await aiService.getModels(activeProvId);
           setModels(provModels);
+        }
+        if (configuration.activeEmbeddingProviderId) {
+          const embModels = await aiService.getModels(configuration.activeEmbeddingProviderId);
+          setEmbeddingModels(embModels);
         }
       }
     } catch (error) {
@@ -148,17 +155,46 @@ export function AIConfigurationPage() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Select
-            label="المزود النشط"
+            label="المزود النشط (للإجابات)"
             value={config.activeProviderId || config.providerId || ''}
             onChange={(e) => handleProviderChange(e.target.value)}
             options={[{ value: '', label: 'اختر المزود' }, ...providers.map(p => ({ value: p.id, label: p.name }))]}
           />
           <Select
-            label="النموذج النشط"
+            label="النموذج النشط (للإجابات)"
             value={config.activeModelId || config.modelId || ''}
             onChange={(e) => setConfig({ ...config, modelId: e.target.value, activeModelId: e.target.value })}
             options={[{ value: '', label: 'اختر النموذج' }, ...models.map(m => ({ value: m.id, label: m.name || m.modelName || 'Model' }))]}
             disabled={!(config.activeProviderId || config.providerId)}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Select
+            label="مزود التضمين والبحث (Embedding)"
+            value={config.activeEmbeddingProviderId || ''}
+            onChange={async (e) => {
+              const pId = e.target.value;
+              setConfig({ ...config, activeEmbeddingProviderId: pId, activeEmbeddingModelId: '' });
+              if (pId) {
+                try {
+                  const embModels = await aiService.getModels(pId);
+                  setEmbeddingModels(embModels);
+                } catch {
+                  toast.error('خطأ في تحميل نماذج التضمين');
+                }
+              } else {
+                setEmbeddingModels([]);
+              }
+            }}
+            options={[{ value: '', label: 'بدون (استخدام الإعدادات الافتراضية)' }, ...providers.map(p => ({ value: p.id, label: p.name }))]}
+          />
+          <Select
+            label="نموذج التضمين (Embedding)"
+            value={config.activeEmbeddingModelId || ''}
+            onChange={(e) => setConfig({ ...config, activeEmbeddingModelId: e.target.value })}
+            options={[{ value: '', label: 'اختر النموذج' }, ...embeddingModels.map(m => ({ value: m.id, label: m.name || m.modelName || 'Model' }))]}
+            disabled={!config.activeEmbeddingProviderId}
           />
         </div>
 

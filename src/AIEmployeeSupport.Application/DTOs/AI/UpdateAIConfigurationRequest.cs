@@ -4,6 +4,8 @@ public class UpdateAIConfigurationRequest
 {
     public Guid ActiveProviderId { get; set; }
     public Guid ActiveModelId { get; set; }
+    public Guid? ActiveEmbeddingProviderId { get; set; }
+    public Guid? ActiveEmbeddingModelId { get; set; }
     public double Temperature { get; set; }
     public int MaxTokens { get; set; }
     public double SimilarityThreshold { get; set; }

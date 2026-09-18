@@ -26,6 +26,8 @@ export interface AiConfiguration {
     activeProviderId?: string;
     modelId?: string;
     activeModelId?: string;
+    activeEmbeddingProviderId?: string;
+    activeEmbeddingModelId?: string;
     apiKey?: string;
     isActive?: boolean;
     enableAutoFailover?: boolean;
@@ -106,6 +108,8 @@ const aiService = {
         const payload = {
             activeProviderId: config.activeProviderId || config.providerId,
             activeModelId: config.activeModelId || config.modelId,
+            activeEmbeddingProviderId: config.activeEmbeddingProviderId,
+            activeEmbeddingModelId: config.activeEmbeddingModelId,
             temperature: config.temperature ?? 0.7,
             maxTokens: config.maxTokens ?? 1024,
             similarityThreshold: config.similarityThreshold ?? 0.7,

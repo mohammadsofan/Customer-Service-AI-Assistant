@@ -6,6 +6,10 @@ public class AIConfigurationDto
     public string ActiveProviderName { get; set; } = string.Empty;
     public Guid ActiveModelId { get; set; }
     public string ActiveModelName { get; set; } = string.Empty;
+    public Guid? ActiveEmbeddingProviderId { get; set; }
+    public string? ActiveEmbeddingProviderName { get; set; }
+    public Guid? ActiveEmbeddingModelId { get; set; }
+    public string? ActiveEmbeddingModelName { get; set; }
     public double Temperature { get; set; }
     public int MaxTokens { get; set; }
     public double SimilarityThreshold { get; set; }

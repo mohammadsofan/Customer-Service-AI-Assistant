@@ -17,6 +17,8 @@ public class AIConfigurationRepository : IAIConfigurationRepository
         => await _context.AIConfigurations.AsNoTracking()
             .Include(c => c.ActiveProvider)
             .Include(c => c.ActiveModel)
+            .Include(c => c.ActiveEmbeddingProvider)
+            .Include(c => c.ActiveEmbeddingModel)
             .FirstOrDefaultAsync(cancellationToken);
 
     public async Task UpdateAsync(AIConfiguration configuration, CancellationToken cancellationToken = default)
@@ -26,6 +28,8 @@ public class AIConfigurationRepository : IAIConfigurationRepository
         {
             existing.ActiveProviderId = configuration.ActiveProviderId;
             existing.ActiveModelId = configuration.ActiveModelId;
+            existing.ActiveEmbeddingProviderId = configuration.ActiveEmbeddingProviderId;
+            existing.ActiveEmbeddingModelId = configuration.ActiveEmbeddingModelId;
             existing.Temperature = configuration.Temperature;
             existing.MaxTokens = configuration.MaxTokens;
             existing.SimilarityThreshold = configuration.SimilarityThreshold;

@@ -26,6 +26,10 @@ public class AIConfigurationService : IAIConfigurationService
             ActiveProviderName = config.ActiveProvider?.Name ?? string.Empty,
             ActiveModelId = config.ActiveModelId,
             ActiveModelName = config.ActiveModel?.ModelName ?? string.Empty,
+            ActiveEmbeddingProviderId = config.ActiveEmbeddingProviderId,
+            ActiveEmbeddingProviderName = config.ActiveEmbeddingProvider?.Name,
+            ActiveEmbeddingModelId = config.ActiveEmbeddingModelId,
+            ActiveEmbeddingModelName = config.ActiveEmbeddingModel?.ModelName,
             Temperature = config.Temperature,
             MaxTokens = config.MaxTokens,
             SimilarityThreshold = config.SimilarityThreshold,
@@ -42,6 +46,8 @@ public class AIConfigurationService : IAIConfigurationService
 
         config.ActiveProviderId = request.ActiveProviderId;
         config.ActiveModelId = request.ActiveModelId;
+        config.ActiveEmbeddingProviderId = request.ActiveEmbeddingProviderId;
+        config.ActiveEmbeddingModelId = request.ActiveEmbeddingModelId;
         config.Temperature = request.Temperature;
         config.MaxTokens = request.MaxTokens;
         config.SimilarityThreshold = request.SimilarityThreshold;
