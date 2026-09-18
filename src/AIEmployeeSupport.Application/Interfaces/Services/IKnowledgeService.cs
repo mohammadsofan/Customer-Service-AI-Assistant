@@ -14,4 +14,5 @@ public interface IKnowledgeService
     Task UpdateStatusAsync(Guid scenarioId, Guid userId, ScenarioStatus status, CancellationToken cancellationToken = default);
     Task ReindexAsync(Guid scenarioId, CancellationToken cancellationToken = default);
     Task<IEnumerable<ScenarioVersionDto>> GetVersionsAsync(Guid scenarioId, CancellationToken cancellationToken = default);
+    Task<EmbeddingStatsDto> GetEmbeddingStatsAsync(CancellationToken cancellationToken = default);
 }

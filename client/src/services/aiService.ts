@@ -139,6 +139,11 @@ const aiService = {
             const msg = err.response?.data?.message || err.response?.data?.title || err.message || 'فشل الاتصال بالمزود';
             return { success: false, message: msg };
         }
+    },
+
+    getEmbeddingStats: async (): Promise<{ totalScenarios: number, pendingEmbeddings: number, readyEmbeddings: number, failedEmbeddings: number }> => {
+        const response = await api.get('/admin/knowledge/embedding-stats');
+        return response.data;
     }
 };
 

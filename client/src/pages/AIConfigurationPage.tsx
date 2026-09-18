@@ -28,6 +28,12 @@ export function AIConfigurationPage() {
   const [systemPrompt, setSystemPrompt] = useState('أنت مساعد ذكي لخدمة العملاء...');
   const [autoFailover, setAutoFailover] = useState(true);
 
+  // For embedding tracking
+  const [initialEmbeddingModelId, setInitialEmbeddingModelId] = useState<string | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isProgressOpen, setIsProgressOpen] = useState(false);
+  const [stats, setStats] = useState<{ totalScenarios: number, pendingEmbeddings: number, readyEmbeddings: number, failedEmbeddings: number } | null>(null);
+
   useEffect(() => {
     loadData();
   }, []);
@@ -42,24 +48,17 @@ export function AIConfigurationPage() {
       setProviders(provs);
       
       if (configuration) {
-        const activeProvId = configuration.activeProviderId || configuration.providerId || '';
-        const activeModId = configuration.activeModelId || configuration.modelId || '';
-        setConfig({
-          ...configuration,
-          providerId: activeProvId,
-          activeProviderId: activeProvId,
-          modelId: activeModId,
-          activeModelId: activeModId,
-          activeEmbeddingProviderId: configuration.activeEmbeddingProviderId || '',
-          activeEmbeddingModelId: configuration.activeEmbeddingModelId || ''
-        });
-        if (configuration.temperature !== undefined) setTemperature(configuration.temperature.toString());
-        if (configuration.maxTokens !== undefined) setMaxTokens(configuration.maxTokens.toString());
-        if (configuration.similarityThreshold !== undefined) setSimilarityThreshold(configuration.similarityThreshold.toString());
-        if (configuration.topK !== undefined) setTopK(configuration.topK.toString());
-        if (configuration.systemPrompt) setSystemPrompt(configuration.systemPrompt);
-        if (configuration.enableAutoFailover !== undefined) setAutoFailover(configuration.enableAutoFailover);
+        setConfig(configuration);
+        setTemperature(configuration.temperature?.toString() || '0.7');
+        setMaxTokens(configuration.maxTokens?.toString() || '2000');
+        setSimilarityThreshold(configuration.similarityThreshold?.toString() || '0.85');
+        setTopK(configuration.topK?.toString() || '3');
+        setSystemPrompt(configuration.systemPrompt || '');
+        setAutoFailover(configuration.enableAutoFailover ?? true);
+        
+        setInitialEmbeddingModelId(configuration.activeEmbeddingModelId || null);
 
+        const activeProvId = configuration.activeProviderId || configuration.providerId;
         if (activeProvId) {
           const provModels = await aiService.getModels(activeProvId);
           setModels(provModels.filter(m => !m.isEmbeddingModel));
@@ -90,7 +89,7 @@ export function AIConfigurationPage() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     const activeProvId = config.activeProviderId || config.providerId;
     const activeModId = config.activeModelId || config.modelId;
     if (!activeProvId) {
@@ -102,11 +101,25 @@ export function AIConfigurationPage() {
       return;
     }
 
+    const hasEmbeddingChanged = initialEmbeddingModelId !== config.activeEmbeddingModelId;
+    if (hasEmbeddingChanged) {
+      setIsConfirmOpen(true);
+    } else {
+      executeSave();
+    }
+  };
+
+  const executeSave = async () => {
+    const activeProvId = config.activeProviderId || config.providerId;
+    const activeModId = config.activeModelId || config.modelId;
+    
     try {
       setIsSaving(true);
       await aiService.saveConfiguration({
         activeProviderId: activeProvId,
         activeModelId: activeModId,
+        activeEmbeddingProviderId: config.activeEmbeddingProviderId,
+        activeEmbeddingModelId: config.activeEmbeddingModelId,
         temperature: parseFloat(temperature) || 0.7,
         maxTokens: parseInt(maxTokens) || 1024,
         similarityThreshold: parseFloat(similarityThreshold) || 0.75,
@@ -114,11 +127,36 @@ export function AIConfigurationPage() {
         systemPrompt,
         enableAutoFailover: autoFailover
       });
+      
+      const hasEmbeddingChanged = initialEmbeddingModelId !== config.activeEmbeddingModelId;
+      setInitialEmbeddingModelId(config.activeEmbeddingModelId || null);
+      
       toast.success('تم حفظ الإعدادات بنجاح');
+      
+      if (hasEmbeddingChanged) {
+        setIsConfirmOpen(false);
+        setIsProgressOpen(true);
+        pollStats();
+      }
     } catch {
       toast.error('حدث خطأ أثناء الحفظ');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const pollStats = async () => {
+    try {
+      const currentStats = await aiService.getEmbeddingStats();
+      setStats(currentStats);
+      if (currentStats.pendingEmbeddings > 0) {
+        setTimeout(pollStats, 2000);
+      } else {
+        setTimeout(() => setIsProgressOpen(false), 2000);
+        toast.success('تم الانتهاء من إعادة تضمين جميع السيناريوهات');
+      }
+    } catch (e) {
+      setTimeout(pollStats, 2000);
     }
   };
 
@@ -262,6 +300,56 @@ export function AIConfigurationPage() {
           </Button>
         </div>
       </div>
+
+      {isConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/30" onClick={() => setIsConfirmOpen(false)}></div>
+          <div className="relative mx-auto max-w-sm rounded bg-white p-6 shadow-xl" dir="rtl">
+            <h2 className="text-lg font-bold mb-4 text-red-600">تنبيه تغيير نموذج التضمين</h2>
+            <p className="mb-6 text-gray-600">
+              تغيير نموذج التضمين (Embedding Model) سيؤدي إلى <strong>إعادة تضمين جميع السيناريوهات</strong> الموجودة في قاعدة البيانات باستخدام النموذج الجديد لضمان توافق البحث.
+              <br /><br />
+              قد تستغرق هذه العملية بعض الوقت وتستهلك رصيداً من المزود الجديد. هل أنت متأكد من المتابعة؟
+            </p>
+            <div className="flex gap-4">
+              <Button onClick={executeSave} isLoading={isSaving} className="bg-red-600 hover:bg-red-700">نعم، متأكد</Button>
+              <Button variant="outline" onClick={() => setIsConfirmOpen(false)} disabled={isSaving}>إلغاء</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isProgressOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/30"></div>
+          <div className="relative mx-auto max-w-md rounded bg-white p-6 w-full shadow-xl" dir="rtl">
+            <h2 className="text-lg font-bold mb-4">جاري إعادة التضمين...</h2>
+            {stats ? (
+              <div>
+                <p className="text-gray-600 mb-2">
+                  يتم الآن بناء متجهات التضمين باستخدام النموذج الجديد:
+                </p>
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4 overflow-hidden">
+                  <div 
+                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-500" 
+                    style={{ width: `${stats.totalScenarios > 0 ? (stats.readyEmbeddings / stats.totalScenarios) * 100 : 100}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>المنجزة: {stats.readyEmbeddings}</span>
+                  <span>المتبقية: {stats.pendingEmbeddings}</span>
+                  <span>الإجمالي: {stats.totalScenarios}</span>
+                </div>
+                {stats.failedEmbeddings > 0 && (
+                  <p className="text-red-500 text-sm mt-2">فشل: {stats.failedEmbeddings} (سيعاد المحاولة)</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-600">جاري الاتصال...</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

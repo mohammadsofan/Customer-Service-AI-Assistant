@@ -411,4 +411,9 @@ public class KnowledgeService : IKnowledgeService
             CreatedAt = v.CreatedAt
         }).OrderByDescending(v => v.Version);
     }
+
+    public async Task<EmbeddingStatsDto> GetEmbeddingStatsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _embeddingRepository.GetStatsAsync(cancellationToken);
+    }
 }

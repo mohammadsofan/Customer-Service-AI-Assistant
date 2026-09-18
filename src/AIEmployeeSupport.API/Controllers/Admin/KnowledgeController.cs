@@ -90,4 +90,11 @@ public class KnowledgeController : ControllerBase
         var result = await _knowledgeService.GetVersionsAsync(id, cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("embedding-stats")]
+    public async Task<IActionResult> GetEmbeddingStats(CancellationToken cancellationToken)
+    {
+        var stats = await _knowledgeService.GetEmbeddingStatsAsync(cancellationToken);
+        return Ok(stats);
+    }
 }

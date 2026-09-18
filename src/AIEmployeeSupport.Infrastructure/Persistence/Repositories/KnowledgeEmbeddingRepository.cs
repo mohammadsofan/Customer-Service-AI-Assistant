@@ -170,5 +170,33 @@ public class KnowledgeEmbeddingRepository : IKnowledgeEmbeddingRepository
         return magnitude == 0 ? 0 : dotProduct / magnitude;
     }
 
+    public async Task InvalidateAllEmbeddingsAsync(CancellationToken cancellationToken = default)
+    {
+        await _context.Database.ExecuteSqlRawAsync(
+            "UPDATE KnowledgeEmbeddings SET Status = 'Pending', UpdatedAt = GETUTCDATE()", 
+            cancellationToken);
+    }
 
+    public async Task<AIEmployeeSupport.Application.DTOs.Knowledge.EmbeddingStatsDto> GetStatsAsync(CancellationToken cancellationToken = default)
+    {
+        var total = await _context.KnowledgeScenarios.CountAsync(s => s.Status == ScenarioStatus.Active || s.Status == ScenarioStatus.Draft, cancellationToken);
+        var pending = await _context.KnowledgeEmbeddings.CountAsync(e => e.Status == EmbeddingStatus.Pending, cancellationToken);
+        var ready = await _context.KnowledgeEmbeddings.CountAsync(e => e.Status == EmbeddingStatus.Ready, cancellationToken);
+        var failed = await _context.KnowledgeEmbeddings.CountAsync(e => e.Status == EmbeddingStatus.Failed, cancellationToken);
+
+        // Account for scenarios that don't have an embedding record yet
+        var missingEmbeddings = total - (pending + ready + failed);
+        if (missingEmbeddings > 0)
+        {
+            pending += missingEmbeddings;
+        }
+
+        return new AIEmployeeSupport.Application.DTOs.Knowledge.EmbeddingStatsDto
+        {
+            TotalScenarios = total,
+            PendingEmbeddings = pending,
+            ReadyEmbeddings = ready,
+            FailedEmbeddings = failed
+        };
+    }
 }

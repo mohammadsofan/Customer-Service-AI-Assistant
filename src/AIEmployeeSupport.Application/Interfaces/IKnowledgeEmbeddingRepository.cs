@@ -18,4 +18,7 @@ public interface IKnowledgeEmbeddingRepository
         double threshold,
         string? queryText,
         CancellationToken cancellationToken = default);
+
+    Task InvalidateAllEmbeddingsAsync(CancellationToken cancellationToken = default);
+    Task<AIEmployeeSupport.Application.DTOs.Knowledge.EmbeddingStatsDto> GetStatsAsync(CancellationToken cancellationToken = default);
 }

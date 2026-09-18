@@ -7,11 +7,16 @@ namespace AIEmployeeSupport.Application.Services;
 public class AIConfigurationService : IAIConfigurationService
 {
     private readonly IAIConfigurationRepository _configurationRepository;
+    private readonly IKnowledgeEmbeddingRepository _embeddingRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public AIConfigurationService(IAIConfigurationRepository configurationRepository, IUnitOfWork unitOfWork)
+    public AIConfigurationService(
+        IAIConfigurationRepository configurationRepository, 
+        IKnowledgeEmbeddingRepository embeddingRepository,
+        IUnitOfWork unitOfWork)
     {
         _configurationRepository = configurationRepository;
+        _embeddingRepository = embeddingRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -44,6 +49,9 @@ public class AIConfigurationService : IAIConfigurationService
         var config = await _configurationRepository.GetAsync(cancellationToken);
         if (config == null) throw new InvalidOperationException("Configuration not found");
 
+        bool embeddingModelChanged = config.ActiveEmbeddingProviderId != request.ActiveEmbeddingProviderId || 
+                                     config.ActiveEmbeddingModelId != request.ActiveEmbeddingModelId;
+
         config.ActiveProviderId = request.ActiveProviderId;
         config.ActiveModelId = request.ActiveModelId;
         config.ActiveEmbeddingProviderId = request.ActiveEmbeddingProviderId;
@@ -59,6 +67,11 @@ public class AIConfigurationService : IAIConfigurationService
 
         await _configurationRepository.UpdateAsync(config, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (embeddingModelChanged)
+        {
+            await _embeddingRepository.InvalidateAllEmbeddingsAsync(cancellationToken);
+        }
 
         return await GetAsync(cancellationToken) ?? throw new InvalidOperationException("Failed to retrieve updated configuration");
     }
