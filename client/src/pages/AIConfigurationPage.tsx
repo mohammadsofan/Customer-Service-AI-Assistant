@@ -304,15 +304,6 @@ export function AIConfigurationPage() {
                   value={llmRerankingTopK}
                   onChange={(e) => setLlmRerankingTopK(e.target.value)}
                 />
-                <Input
-                  label="عتبة الثقة (Confidence Threshold)"
-                  type="number"
-                  step="0.05"
-                  min="0"
-                  max="1"
-                  value={llmRerankingConfidenceThreshold}
-                  onChange={(e) => setLlmRerankingConfidenceThreshold(e.target.value)}
-                />
               </div>
             )}
           </div>
