@@ -263,37 +263,40 @@ public class KnowledgeService : IKnowledgeService
             }
         }
 
-        scenario.ResolutionSteps.Clear();
-        if (request.Steps != null && request.Steps.Any())
+        if (request.Steps != null || request.ResolutionSteps != null)
         {
-            for (int i = 0; i < request.Steps.Count; i++)
+            scenario.ResolutionSteps.Clear();
+            if (request.Steps != null && request.Steps.Any())
             {
-                scenario.ResolutionSteps.Add(new ResolutionStep
+                for (int i = 0; i < request.Steps.Count; i++)
                 {
-                    Id = Guid.NewGuid(),
-                    ScenarioId = scenario.Id,
-                    StepOrder = i + 1,
-                    StepText = request.Steps[i].StepText,
-                    Description = request.Steps[i].Description,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                });
+                    scenario.ResolutionSteps.Add(new ResolutionStep
+                    {
+                        Id = Guid.NewGuid(),
+                        ScenarioId = scenario.Id,
+                        StepOrder = i + 1,
+                        StepText = request.Steps[i].StepText,
+                        Description = request.Steps[i].Description,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    });
+                }
             }
-        }
-        else if (request.ResolutionSteps != null)
-        {
-            for (int i = 0; i < request.ResolutionSteps.Count; i++)
+            else if (request.ResolutionSteps != null)
             {
-                scenario.ResolutionSteps.Add(new ResolutionStep
+                for (int i = 0; i < request.ResolutionSteps.Count; i++)
                 {
-                    Id = Guid.NewGuid(),
-                    ScenarioId = scenario.Id,
-                    StepOrder = i + 1,
-                    StepText = request.ResolutionSteps[i],
-                    Description = null,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                });
+                    scenario.ResolutionSteps.Add(new ResolutionStep
+                    {
+                        Id = Guid.NewGuid(),
+                        ScenarioId = scenario.Id,
+                        StepOrder = i + 1,
+                        StepText = request.ResolutionSteps[i],
+                        Description = null,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    });
+                }
             }
         }
 

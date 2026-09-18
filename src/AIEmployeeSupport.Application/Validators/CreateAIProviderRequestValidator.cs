@@ -21,5 +21,9 @@ public class CreateAIProviderRequestValidator : AbstractValidator<CreateAIProvid
 
         RuleFor(x => x.ApiKey)
             .NotEmpty().WithMessage("مفتاح API مطلوب");
+
+        RuleFor(x => x.BaseUrl)
+            .Must(UrlSecurityValidator.IsSafeUrl)
+            .WithMessage("Base URL must be a valid HTTPS URL and cannot point to internal/private networks (SSRF protection).");
     }
 }

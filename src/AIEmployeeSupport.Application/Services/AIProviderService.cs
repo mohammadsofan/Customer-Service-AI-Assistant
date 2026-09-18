@@ -42,6 +42,14 @@ public class AIProviderService : IAIProviderService
 
     public async Task<AIProviderDto> CreateAsync(CreateAIProviderRequest request, CancellationToken cancellationToken = default)
     {
+        var existingProviders = await _providerRepository.GetAllAsync(cancellationToken);
+        if (existingProviders.Any(p => string.Equals(p.Name, request.Name, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new FluentValidation.ValidationException(new[] { 
+                new FluentValidation.Results.ValidationFailure("Name", "Provider name already exists.") 
+            });
+        }
+
         var provider = new AIProvider
         {
             Id = Guid.NewGuid(),
@@ -64,6 +72,14 @@ public class AIProviderService : IAIProviderService
     {
         var provider = await _providerRepository.GetByIdAsync(id, cancellationToken);
         if (provider == null) throw new InvalidOperationException("Provider not found");
+
+        var existingProviders = await _providerRepository.GetAllAsync(cancellationToken);
+        if (existingProviders.Any(p => p.Id != id && string.Equals(p.Name, request.Name, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new FluentValidation.ValidationException(new[] { 
+                new FluentValidation.Results.ValidationFailure("Name", "Provider name already exists.") 
+            });
+        }
 
         provider.Name = request.Name;
         if (!string.IsNullOrEmpty(request.ApiKey))
@@ -127,14 +143,7 @@ public class AIProviderService : IAIProviderService
         string apiKey = string.Empty;
         if (!string.IsNullOrWhiteSpace(provider.EncryptedApiKey))
         {
-            try
-            {
-                apiKey = _encryptionService.Decrypt(provider.EncryptedApiKey);
-            }
-            catch
-            {
-                apiKey = provider.EncryptedApiKey;
-            }
+            apiKey = _encryptionService.Decrypt(provider.EncryptedApiKey);
         }
 
         var client = _providerFactory.CreateClient(provider.ProviderType, apiKey, provider.BaseUrl);
