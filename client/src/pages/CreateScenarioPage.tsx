@@ -321,7 +321,7 @@ export function CreateScenarioPage() {
                           <button
                             type="button"
                             onClick={handleEditStepSave}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-blue-700"
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-[#76bc21] text-white rounded-lg hover:bg-[#67a61d]"
                           >
                             <Check className="w-4 h-4" /> حفظ
                           </button>
