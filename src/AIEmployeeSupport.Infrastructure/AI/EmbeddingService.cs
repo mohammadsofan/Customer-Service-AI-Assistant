@@ -11,24 +11,24 @@ namespace AIEmployeeSupport.Infrastructure.AI;
 
 public class EmbeddingService : IEmbeddingService
 {
-    private readonly HttpClient _httpClient;
     private readonly EmbeddingSettings _settings;
     private readonly ILogger<EmbeddingService> _logger;
     private readonly IAIConfigurationRepository _configurationRepository;
     private readonly IEncryptionService _encryptionService;
+    private readonly IAIProviderFactory _providerFactory;
 
     public EmbeddingService(
-        IHttpClientFactory httpClientFactory,
         IOptions<EmbeddingSettings> settings,
         ILogger<EmbeddingService> logger,
         IAIConfigurationRepository configurationRepository,
-        IEncryptionService encryptionService)
+        IEncryptionService encryptionService,
+        IAIProviderFactory providerFactory)
     {
-        _httpClient = httpClientFactory.CreateClient("EmbeddingClient");
         _settings = settings.Value;
         _logger = logger;
         _configurationRepository = configurationRepository;
         _encryptionService = encryptionService;
+        _providerFactory = providerFactory;
 
         if (string.IsNullOrEmpty(_settings.ApiKey))
         {
@@ -39,14 +39,6 @@ public class EmbeddingService : IEmbeddingService
             }
         }
 
-        if (_settings.Provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
-        {
-            _httpClient.BaseAddress = new Uri("https://api.openai.com/v1/");
-            if (!string.IsNullOrEmpty(_settings.ApiKey))
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _settings.ApiKey);
-            }
-        }
     }
 
     public async Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
@@ -65,7 +57,8 @@ public class EmbeddingService : IEmbeddingService
             var config = await _configurationRepository.GetAsync(cancellationToken);
             if (config?.ActiveEmbeddingProvider != null)
             {
-                providerName = config.ActiveEmbeddingProvider.ProviderType.ToString();
+                var providerType = config.ActiveEmbeddingProvider.ProviderType;
+                var baseUrl = config.ActiveEmbeddingProvider.BaseUrl;
                 try
                 {
                     apiKey = _encryptionService.Decrypt(config.ActiveEmbeddingProvider.EncryptedApiKey);
@@ -78,76 +71,23 @@ public class EmbeddingService : IEmbeddingService
                 {
                     modelName = config.ActiveEmbeddingModel.ModelName;
                 }
+
+                var client = _providerFactory.CreateClient(providerType, apiKey, baseUrl);
+                return await client.GenerateEmbeddingAsync(text, modelName, cancellationToken);
             }
 
+            // Fallback to appsettings config if no DB config is set
             if (providerName.Equals("OpenAI", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(apiKey))
             {
-                _httpClient.BaseAddress = new Uri("https://api.openai.com/v1/");
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-                var payload = new
-                {
-                    input = text,
-                    model = modelName
-                };
-
-                var response = await _httpClient.PostAsJsonAsync("embeddings", payload, cancellationToken);
-                
-                if (response.IsSuccessStatusCode)
-                {
-                    var resultStr = await response.Content.ReadAsStringAsync(cancellationToken);
-                    using var doc = JsonDocument.Parse(resultStr);
-                    
-                    var dataArray = doc.RootElement.GetProperty("data")[0].GetProperty("embedding");
-                    
-                    var floats = new float[dataArray.GetArrayLength()];
-                    var i = 0;
-                    foreach (var element in dataArray.EnumerateArray())
-                    {
-                        floats[i++] = element.GetSingle();
-                    }
-                    
-                    return floats;
-                }
-                
-                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogWarning("OpenAI Embedding API error: {StatusCode} - {Error}. Falling back to deterministic embedding.", response.StatusCode, errorContent);
+                var client = _providerFactory.CreateClient(AIEmployeeSupport.Domain.Enums.ProviderType.OpenAI, apiKey);
+                return await client.GenerateEmbeddingAsync(text, modelName, cancellationToken);
             }
             else if (providerName.Equals("Google", StringComparison.OrdinalIgnoreCase) || providerName.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
             {
                 if (!string.IsNullOrEmpty(apiKey))
                 {
-                    var payload = new
-                    {
-                        model = $"models/{modelName}",
-                        content = new
-                        {
-                            parts = new[] { new { text = text } }
-                        }
-                    };
-
-                    var url = $"https://generativelanguage.googleapis.com/v1beta/models/{modelName}:embedContent?key={apiKey}";
-                    var response = await _httpClient.PostAsJsonAsync(url, payload, cancellationToken);
-                    
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var resultStr = await response.Content.ReadAsStringAsync(cancellationToken);
-                        using var doc = JsonDocument.Parse(resultStr);
-                        
-                        var dataArray = doc.RootElement.GetProperty("embedding").GetProperty("values");
-                        
-                        var floats = new float[dataArray.GetArrayLength()];
-                        var i = 0;
-                        foreach (var element in dataArray.EnumerateArray())
-                        {
-                            floats[i++] = element.GetSingle();
-                        }
-                        
-                        return floats;
-                    }
-                    
-                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-                    _logger.LogWarning("Google Embedding API error: {StatusCode} - {Error}. Falling back to deterministic embedding.", response.StatusCode, errorContent);
+                    var client = _providerFactory.CreateClient(AIEmployeeSupport.Domain.Enums.ProviderType.Gemini, apiKey);
+                    return await client.GenerateEmbeddingAsync(text, modelName, cancellationToken);
                 }
             }
 

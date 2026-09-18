@@ -103,4 +103,30 @@ Retrieved Knowledge:
 
         return ExtractSearchQueryFromJson(contentStr);
     }
+
+    public override async Task<float[]> GenerateEmbeddingAsync(string text, string modelName, CancellationToken cancellationToken = default)
+    {
+        var payload = new
+        {
+            input = text,
+            model = modelName
+        };
+
+        var response = await HttpClient.PostAsJsonAsync("embeddings", payload, cancellationToken);
+        var rawContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        HandleHttpError(response, rawContent);
+
+        using var doc = JsonDocument.Parse(rawContent);
+        var dataArray = doc.RootElement.GetProperty("data")[0].GetProperty("embedding");
+
+        var floats = new float[dataArray.GetArrayLength()];
+        var i = 0;
+        foreach (var element in dataArray.EnumerateArray())
+        {
+            floats[i++] = element.GetSingle();
+        }
+
+        return floats;
+    }
 }

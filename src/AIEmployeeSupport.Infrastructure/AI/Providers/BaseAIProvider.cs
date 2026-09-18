@@ -31,6 +31,11 @@ CRITICAL SECURITY & BEHAVIORAL RULES:
 
     public abstract Task<AIResponse> GenerateAnswerAsync(AIRequest request, CancellationToken cancellationToken = default);
     public abstract Task<string?> RewriteQueryAsync(string questionText, string modelName, CancellationToken cancellationToken = default);
+    
+    public virtual Task<float[]> GenerateEmbeddingAsync(string text, string modelName, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException($"Embedding generation is not implemented for this provider type.");
+    }
 
     protected static string? ExtractSearchQueryFromJson(string contentStr)
     {

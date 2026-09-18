@@ -90,4 +90,34 @@ Retrieved Knowledge:
 
         return ExtractSearchQueryFromJson(contentStr);
     }
+
+    public override async Task<float[]> GenerateEmbeddingAsync(string text, string modelName, CancellationToken cancellationToken = default)
+    {
+        var payload = new
+        {
+            model = $"models/{modelName}",
+            content = new
+            {
+                parts = new[] { new { text = text } }
+            }
+        };
+
+        var url = $"./{modelName}:embedContent?key={ApiKey}";
+        var response = await HttpClient.PostAsJsonAsync(url, payload, cancellationToken);
+        var rawContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        HandleHttpError(response, rawContent);
+
+        using var doc = JsonDocument.Parse(rawContent);
+        var dataArray = doc.RootElement.GetProperty("embedding").GetProperty("values");
+
+        var floats = new float[dataArray.GetArrayLength()];
+        var i = 0;
+        foreach (var element in dataArray.EnumerateArray())
+        {
+            floats[i++] = element.GetSingle();
+        }
+
+        return floats;
+    }
 }
